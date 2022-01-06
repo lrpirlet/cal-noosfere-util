@@ -1,3 +1,7 @@
+# stop any debug/development files to be uploaded
+junk/*
+.vscode/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -26,6 +30,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.zip
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -50,6 +55,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+cover/
 
 # Translations
 *.mo
@@ -72,6 +78,7 @@ instance/
 docs/_build/
 
 # PyBuilder
+.pybuilder/
 target/
 
 # Jupyter Notebook
@@ -82,6 +89,8 @@ profile_default/
 ipython_config.py
 
 # pyenv
+#   For a library or package, you might want to ignore these files since the code is
+#   intended to run in multiple environments; otherwise, check them in:
 .python-version
 
 # pipenv
@@ -127,3 +136,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# pytype static type analyzer
+.pytype/                             

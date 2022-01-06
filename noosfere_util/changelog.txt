@@ -1,0 +1,33 @@
+This plugin should complement cal-noosfere.
+Issues: 
+1 Cal-noosfere CANNOT wipe out a new metadata empty field
+  example: if a previous metadata source download, from anywhere, did set the series
+  to "something", and noosfere metadata source finds NO series,
+  then calibre will NOT wipe out the series field.
+2 A book may exist under several volumes... Each may differ because of a re-edition
+  by the same or by a different editor... it may even be part of one or several anthology
+  with possibly a different author and/or title and/or ISBN. I made some choice but this
+  may NOT be the best fit. Solution is to manually go to the book page and chose the best
+  volume by setting the nsfr_id, and restarting cal-noosfere metadata source plugin.
+3 Cal-noosfere does allow for overloading the publisher field with the collection and
+  the index of the collection. It, then,  becomes necessary to split this info in custom
+  columns.
+  
+Intentions:
+1 Provide some pre-processing by wiping out some fields, set nsfr_id to the new desired volume.
+2 Provide some post-processing by splitting and setting the information where it needs to go.
+
+Remark: I just NOT a professional developer... This is more like a hobby to learn about python...
+If I succeed, fine... read: no commitment. :-)
+
+Used as a base for this the experience gathered during a failing attempt to go interactive
+from within cal-noosfere metadata source plugin.
+
+Worked on a spawned WebEngineView and added some unique toolbar... (great PyQt5 experience,
+A little bit like fighting mud... you see nothing clearly, find lots of examples, find many docs 
+that looks contradictory till you grasp something that invalidate what you though you 
+understood... anyway, it is still fun for a hobby :-)... I do think sometimes that Mickey mouse 
+programming or assembler is easier... )
+
+Spawned process seems to work fine for both data in and data out...
+

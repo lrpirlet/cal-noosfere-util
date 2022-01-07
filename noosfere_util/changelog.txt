@@ -23,7 +23,7 @@ If I succeed, fine... read: no commitment. :-)
 Used as a base for this the experience gathered during a failing attempt to go interactive
 from within cal-noosfere metadata source plugin.
 
-Worked on a spawned WebEngineView and added some unique toolbar... (great PyQt5 experience,
+Worked on a spawned WebEngineView and added a second unique toolbar... (great PyQt5 experience,
 A little bit like fighting mud... you see nothing clearly, find lots of examples, find many docs 
 that looks contradictory till you grasp something that invalidate what you though you 
 understood... anyway, it is still fun for a hobby :-)... I do think sometimes that Mickey mouse 

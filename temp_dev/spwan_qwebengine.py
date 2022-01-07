@@ -10,43 +10,58 @@ import sys
 
 class MainWindow(QMainWindow):
 
-    def __init__(self, url, que):
+    def __init__(self, url, isbn, auteurs, titre, que):
         super(MainWindow,self).__init__()
 
+        self.url = url
+        self.isbn = isbn
+        self.auteurs = auteurs
+        self.titre = titre
         self.que = que
+#        qDebug("url     : "+self.url)
+#        qDebug("isbn    : "+self.isbn)
+#        qDebug("auteurs : "+self.auteurs)
+#        qDebug("titre   : "+self.titre)
+#        qDebug("que     : "+str(type(self.que)))
 
+    # set browser, make it central
         self.browser = QWebEngineView()
-#        self.browser.setGeometry(100, 100, 1200, 800)
         self.browser.resize(1200,800)
         self.browser.setUrl(QUrl(url))
 
         self.setCentralWidget(self.browser)
 
-        get_tb = QToolBar("Get")
-        get_tb.setIconSize(QSize(60,30))
-        self.addToolBar(Qt.BottomToolBarArea, get_tb)
+    # set get info toolbar
+        info_tb = QToolBar("Get")
+        info_tb.setIconSize(QSize(60,30))
+        self.addToolBar(Qt.BottomToolBarArea, info_tb)
 
         ISBN_btn = QAction(QIcon('./blue_icon/ISBN.png'), "ISBN", self)
-        ISBN_btn.setStatusTip("Montre et copie le ISBN pour coller dans Mots-clefs à rechercher")
-        ISBN_btn.triggered.connect(self.navigate_home)
-        get_tb.addAction(ISBN_btn)
+        ISBN_btn.setStatusTip("Montre et copie le ISBN dans le presse-papier pour coller dans Mots-clefs à rechercher")
+                                # Show authors, copy in clipboard to paste in search field of noosfere
+        ISBN_btn.triggered.connect(self.set_isbn_info)
+        info_tb.addAction(ISBN_btn)
 
         Auteurs_btn = QAction(QIcon('./blue_icon/Auteurs.png'), "Auteur(s)", self)
-        Auteurs_btn.setStatusTip("Montre et copie le(s) Auteur(s) pour coller dans Mots-clefs à rechercher")
-        Auteurs_btn.triggered.connect(self.browser.back)
-        get_tb.addAction(Auteurs_btn)
+        Auteurs_btn.setStatusTip("Montre et copie le(s) Auteur(s) dans le presse-papier pour coller dans Mots-clefs à rechercher")
+                                # Show authors, copy in clipboard to paste in search field of noosfere
+        Auteurs_btn.triggered.connect(self.set_auteurs_info)
+        info_tb.addAction(Auteurs_btn)
 
         Titre_btn = QAction(QIcon('./blue_icon/Titre.png'), "Titre", self)
-        Titre_btn.setStatusTip("Montre le Titre")
-        Titre_btn.triggered.connect(self.browser.forward)
-        get_tb.addAction(Titre_btn)
+        Titre_btn.setStatusTip("Montre le Titre")                                   # show title
+        Titre_btn.triggered.connect(self.set_titre_info)
+        info_tb.addAction(Titre_btn)
 
-        self.getbar = QLineEdit()
-        self.getbar.setReadOnly(True)
-        self.getbar.setStatusTip("Aucune action, montre l'ISBN, le(s) Auteur(s) ou le Titre, protégé en écriture")
-                                # No action displays the ISBN the Author(s) or the Title, in write protect
-        get_tb.addWidget(self.getbar)
+        self.infobox = QLineEdit()
+        self.infobox.setReadOnly(True)
+        self.infobox.setStatusTip(" Aucune action, ce box montre l'ISBN, le(s) Auteur(s) ou le Titre, protégé en écriture."
+                                  " Tout ou partie du texte peut être sélectionné pour copier et coller")
+                                 # No action, this box displays the ISBN, the Author(s) or the Title, in write protect.
+                                 # Part or the whole text may be selected for copy paste.
+        info_tb.addWidget(self.infobox)
 
+    # set navigation toolbar
         nav_tb = QToolBar("Navigation")
         nav_tb.setIconSize(QSize(20,20))
         self.addToolBar(nav_tb)
@@ -76,11 +91,11 @@ class MainWindow(QMainWindow):
         stop_btn.triggered.connect(self.browser.stop)
         nav_tb.addAction(stop_btn)
 
-        self.urlbar = QLineEdit()
-        self.urlbar.returnPressed.connect(self.navigate_to_url)
-        self.urlbar.setStatusTip("Tu peut même introduire une adresse, hors noosfere, mais A TES RISQUES ET PERILS... noosfere est sûr ( https:// ), la toile par contre...")
+        self.urlbox = QLineEdit()
+        self.urlbox.returnPressed.connect(self.navigate_to_url)
+        self.urlbox.setStatusTip("Tu peut même introduire une adresse, hors noosfere, mais A TES RISQUES ET PERILS... noosfere est sûr ( https:// ), la toile par contre...")
                                 # You can even enter an address, outside of noosfere, but AT YOUR OWN RISK... noosfere is safe: ( https:// ), the web on the other side...
-        nav_tb.addWidget(self.urlbar)
+        nav_tb.addWidget(self.urlbox)
 
         self.browser.urlChanged.connect(self.update_urlbar)
         self.browser.loadFinished.connect(self.update_title)
@@ -101,30 +116,51 @@ class MainWindow(QMainWindow):
 
         self.setStatusBar(QStatusBar(self))
 
+  # get info actions
+    def set_isbn_info(self):
+        self.infobox.setText( self.isbn )
+        cb = QApplication.clipboard()
+        cb.clear(mode=cb.Clipboard)
+        cb.setText(self.isbn.replace("-",""), mode=cb.Clipboard)
+
+    def set_auteurs_info(self):
+        self.infobox.setText( self.auteurs )
+        cb = QApplication.clipboard()
+        cb.clear(mode=cb.Clipboard)
+        cb.setText(self.auteurs, mode=cb.Clipboard)
+
+    def set_titre_info(self):
+        self.infobox.setText( self.titre )
+
+  # Navigation actions
+    def initial_url(self,url="http://www.google.com"):
+        self.browser.setUrl(QUrl(url))
+        self.urlbox.setText(url)
+
     def navigate_home(self):
         self.browser.setUrl( QUrl("https://www.noosfere.org/") )
 
     def navigate_to_url(self):                    # Does not receive the Url
-        q = QUrl( self.urlbar.text() )
+        q = QUrl( self.urlbox.text() )
         self.browser.setUrl(q)
-        print("In navigate_to_url  URL : ", self.urlbar.text())
+#        qDebug("In navigate_to_url  URL : "+str(self.urlbox.text()))
 
     def update_urlbar(self, q):
-        self.urlbar.setText( q.toString() )
-        self.urlbar.setCursorPosition(0)
+        self.urlbox.setText( q.toString() )
+        self.urlbox.setCursorPosition(0)
 
     def update_title(self):
         title = self.browser.page().title()
         self.setWindowTitle(title)
 
     def select_and_exit(self):                    #sent q to the queue wait till consumed then exit
-        self.que.put(self.urlbar.text())
+        self.que.put(self.urlbox.text())
         sys.exit(0)
 
     def closeEvent(self, event):                  # hit window exit "X" button
         qDebug('MainWindow.closeEvent()')
         reply = QMessageBox.question(self, 'Vraiment', "Quitter et ne rien changer", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
-        qDebug('MainWindow.closeEvent()'+str(reply))
+#        qDebug('MainWindow.closeEvent()'+str(reply))
         if reply == QMessageBox.Yes:
             event.accept()
             self.que.put("")
@@ -132,21 +168,19 @@ class MainWindow(QMainWindow):
         else:
             event.ignore()
 
-def spawned_main(que, url):
-#    logfile = open("spanlog.txt", "a")
-#    txt=time.strftime("%D %H:%M:%S", time.localtime())+' logfile is open now'
-#    logfile.write(txt+"\n")
-#    logfile.flush()
-#    print(time.strftime("%D %H:%M:%S", time.localtime()), "In spawned_main(que, url)", type(que), type(url))
+def main(url, isbn, auteurs, titre, que):
     app = QApplication([])
-#    window = MainWindow(logfile, url, que)
-    window = MainWindow(url, que)
+    window = MainWindow(url, isbn, auteurs, titre, que)
+    window.initial_url(url)
     app.exec_()
 
 if __name__ == '__main__':
     url="https://www.noosfere.org/livres/noosearch.asp"
     que = Queue()
-    prc = Process(target=spawned_main, args=(que, url))
+    isbn = "2-277-12362-5"
+    auteurs = "Alfred Elton VAN VOGT"
+    titre = "Un tres tres long titre qui n'a rien a voir avec l'auteur ou l'ISBN"
+    prc = Process(target=main, args=(url, isbn, auteurs, titre, que))
     prc.start()
     response = que.get()
     print("In main, la dernier url est: ", response, "len",  len(response), "type", type(response))

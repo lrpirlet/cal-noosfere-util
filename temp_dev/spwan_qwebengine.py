@@ -6,23 +6,20 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtWebEngineWidgets import *
 
-import sys
+##import sys
 
 class MainWindow(QMainWindow):
-
     def __init__(self, url, isbn, auteurs, titre, que):
         super(MainWindow,self).__init__()
 
-        self.url = url
         self.isbn = isbn
         self.auteurs = auteurs
         self.titre = titre
         self.que = que
-#        qDebug("url     : "+self.url)
-#        qDebug("isbn    : "+self.isbn)
-#        qDebug("auteurs : "+self.auteurs)
-#        qDebug("titre   : "+self.titre)
-#        qDebug("que     : "+str(type(self.que)))
+        qDebug("isbn    : "+self.isbn)
+        qDebug("auteurs : "+self.auteurs)
+        qDebug("titre   : "+self.titre)
+        qDebug("que     : "+str(type(self.que)))
 
     # set browser, make it central
         self.browser = QWebEngineView()
@@ -98,6 +95,7 @@ class MainWindow(QMainWindow):
         nav_tb.addWidget(self.urlbox)
 
         self.browser.urlChanged.connect(self.update_urlbar)
+        self.browser.loadStarted.connect(self.loading_title)
         self.browser.loadFinished.connect(self.update_title)
 
         abort_btn = QAction(QIcon('./blue_icon/abort.png'), "Abort", self)
@@ -143,11 +141,14 @@ class MainWindow(QMainWindow):
     def navigate_to_url(self):                    # Does not receive the Url
         q = QUrl( self.urlbox.text() )
         self.browser.setUrl(q)
-#        qDebug("In navigate_to_url  URL : "+str(self.urlbox.text()))
 
     def update_urlbar(self, q):
         self.urlbox.setText( q.toString() )
         self.urlbox.setCursorPosition(0)
+
+    def loading_title(self):
+        title="En téléchargement de l'url"
+        self.setWindowTitle(title)
 
     def update_title(self):
         title = self.browser.page().title()
@@ -155,12 +156,12 @@ class MainWindow(QMainWindow):
 
     def select_and_exit(self):                    #sent q to the queue wait till consumed then exit
         self.que.put(self.urlbox.text())
-        sys.exit(0)
+        #sys.exit(0)
+        qApp.quit()
 
     def closeEvent(self, event):                  # hit window exit "X" button
         qDebug('MainWindow.closeEvent()')
         reply = QMessageBox.question(self, 'Vraiment', "Quitter et ne rien changer", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
-#        qDebug('MainWindow.closeEvent()'+str(reply))
         if reply == QMessageBox.Yes:
             event.accept()
             self.que.put("")
@@ -168,7 +169,7 @@ class MainWindow(QMainWindow):
         else:
             event.ignore()
 
-def main(url, isbn, auteurs, titre, que):
+def wmain(url, isbn, auteurs, titre, que):
     app = QApplication([])
     window = MainWindow(url, isbn, auteurs, titre, que)
     window.initial_url(url)
@@ -180,7 +181,7 @@ if __name__ == '__main__':
     isbn = "2-277-12362-5"
     auteurs = "Alfred Elton VAN VOGT"
     titre = "Un tres tres long titre qui n'a rien a voir avec l'auteur ou l'ISBN"
-    prc = Process(target=main, args=(url, isbn, auteurs, titre, que))
+    prc = Process(target=wmain, args=(url, isbn, auteurs, titre, que))
     prc.start()
     response = que.get()
     print("In main, la dernier url est: ", response, "len",  len(response), "type", type(response))

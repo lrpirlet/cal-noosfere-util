@@ -6,7 +6,7 @@
 ####from PyQt5.Qt import QUrl
 ####from PyQt5.QtWebEngineWidgets import QWebEngineView
 ####
-####from calibre.gui2 import Application
+from calibre.gui2 import Application
 ####
 ####
 ####def main(url):
@@ -26,8 +26,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtWebEngineWidgets import *
 
-import sys
-#import os
+import tempfile
+import os
 
 class MainWindow(QMainWindow):
 
@@ -89,13 +89,28 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(title)
 
     def select_and_exit(self):
-        # sent q to the queue wait till consumed then exit
-        print("nous sommes à l'URL", self.urlbar.text(),"\nNow exiting")
-        sys.exit("done")
-        # need to push the address to calling process using the queue opened
-        
+        cb = QApplication.clipboard()
+        cb.clear(mode=cb.Clipboard)
+        cb.setText(self.urlbar.text(), mode=cb.Clipboard)
+
+        qApp.quit()     # exit application
+
 def main(url):
-    app = QApplication(sys.argv)
+    #     def launch_gui_app(self, name, args=(), kwargs=None, description=''):
+    #         job = ParallelJob(name, description, lambda x: x,
+    #                 args=list(args), kwargs=kwargs or {})
+    #         self.serverserver.run_job(job, gui=True, redirect_output=False)
+    #
+    # from jobs.py in gui2 in calibre in src...
+    #
+    # self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.webengine_demo.main', 'url':url})
+
+    # create a temp file... while it exists ui.py will wait... this file will disappear with the process
+    tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb")
+
+    app = Application([])
     window = MainWindow()
     window.initial_url(url)
     app.exec_()
+
+    tfp.close           # close temp file

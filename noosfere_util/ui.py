@@ -12,7 +12,14 @@ if False:
 # The class that all interface action plugins must inherit from
 from calibre.gui2.actions import InterfaceAction
 from PyQt5.Qt import QInputDialog
-from multiprocessing import Queue
+from PyQt5.QtWidgets import QApplication
+from time import sleep
+
+import tempfile
+import glob
+import os
+
+#from multiprocessing import Queue
 # https://docs.python.org/fr/3/library/multiprocessing.html?highlight=queue#multiprocessing.Queue
 
 class InterfacePlugin(InterfaceAction):
@@ -47,19 +54,35 @@ class InterfacePlugin(InterfaceAction):
         self.qaction.triggered.connect(self.show_dialog)
 
     def show_dialog(self):
+        # remove all trace of an old synchronization file between calibre and the outside process running QWebEngineView
+        for i in glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):
+            os.remove(i)
+
         # Ask the user for a URL
         url, ok = QInputDialog.getText(self.gui, 'Enter a URL', 'Enter a URL to browse below', text='https://www.noosfere.org/livres/editionslivre.asp?numitem=7385 ')
         if not ok or not url:
             return
-        print("on cree une queue")
-        q = Queue(maxsize = 1)
-        print(q.qsize())
+
         # Launch a separate process to view the URL in WebEngine
-        self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={
-            'module':'calibre_plugins.webengine_demo.main', 'url':url})
+        self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.webengine_demo.main', 'url':url})
+
+        # sleep some like 5 seconds to wait for main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
+        # according to the tempfile doc, this temp file MAY be system wide... CARE if more than ONE user runs calibre
+        sleep(5)                # so there is time enough to create atemp file with sync-cal-qweb prefix
+        while glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):         # wait till file is removed
+            sleep(.2)           # loop fast enough for a user to feel the operation instantaneous
+
+        # synch file is gone, meaning QWebEngineView process is closed so, we can collect the result in the system clipboard
         print("webengine-dialog process submitted")
-        choosen_url = q.get()
-        print('choosen_url',choosen_url)
+        cb = QApplication.clipboard()
+        choosen_url = cb.text(mode=cb.Clipboard)
+        cb.clear(mode=cb.Clipboard)
+
+        print('choosen_url from clipboard',choosen_url)
+
+
+        url, ok = QInputDialog.getText(self.gui, 'Enter a URL', 'Enter a URL to browse below', text="current directory : "+str(os.getcwd()))
+
 
 
 #     def launch_gui_app(self, name, args=(), kwargs=None, description=''):
@@ -68,4 +91,4 @@ class InterfacePlugin(InterfaceAction):
 #         self.serverserver.run_job(job, gui=True, redirect_output=False)
 #
 # from jobs.py in gui2 in calibre in src...
-# 
+#

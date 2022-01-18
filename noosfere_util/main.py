@@ -32,7 +32,8 @@ import os
 class MainWindow(QMainWindow):
 
     def __init__(self, *args, **kwargs):
-        super(MainWindow,self).__init__(*args, **kwargs)
+        #super(MainWindow,self).__init__(*args, **kwargs)
+        super().__init__()
 
         self.browser = QWebEngineView()
         self.browser.setGeometry(300, 300, 1200, 800)
@@ -95,7 +96,7 @@ class MainWindow(QMainWindow):
 
         qApp.quit()     # exit application
 
-def main(url):
+def main(data):
     #     def launch_gui_app(self, name, args=(), kwargs=None, description=''):
     #         job = ParallelJob(name, description, lambda x: x,
     #                 args=list(args), kwargs=kwargs or {})
@@ -105,12 +106,29 @@ def main(url):
     #
     # self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.webengine_demo.main', 'url':url})
 
-    # create a temp file... while it exists ui.py will wait... this file will disappear with the process
-    tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb")
+    # Initialize environment..
 
+    # create a temp file... while it exists ui.py will wait... this file will disappear with the process
+    #tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb")
+    tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb",mode='w+',buffering=1, delete=False)
+    tfp.write(str(type(data))+"\n")
+    tfp.write("data : "+str(data)+"\n")
+
+    # retrieve component from data
+    #        data = [url, isbn, auteurs, titre]
+    url, isbn, auteurs, titre = data[0], data[1], data[2], data[3]
+
+    tfp.write("url     : "+url+"\n")
+    tfp.write("isbn    : "+isbn+"\n")
+    tfp.write("auteurs : "+auteurs+"\n")
+    tfp.write("titre   : "+titre+"\n")
+
+    # Start QWebEngineView and associated widgets
     app = Application([])
+
     window = MainWindow()
     window.initial_url(url)
     app.exec_()
 
+    # signal ui.py that we are finished
     tfp.close           # close temp file

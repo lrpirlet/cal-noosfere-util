@@ -54,17 +54,28 @@ class InterfacePlugin(InterfaceAction):
         self.qaction.triggered.connect(self.show_dialog)
 
     def show_dialog(self):
+
+        # Ask the user for a URL
+        #url, ok = QInputDialog.getText(self.gui, 'Enter a URL', 'Enter a URL to browse below', text='https://www.noosfere.org/livres/editionslivre.asp?numitem=7385 ')
+        #if not ok or not url:
+        #   return
+        # set url, isbn, auteurs and titre
+        url="https://www.noosfere.org/livres/noosearch.asp"
+        isbn = "2-277-12362-5"
+        auteurs = "Alfred Elton VAN VOGT"
+        titre = "Un tres tres long titre qui n'a rien a voir avec l'auteur ou l'ISBN"
+        data = [url, isbn, auteurs, titre]
+
         # remove all trace of an old synchronization file between calibre and the outside process running QWebEngineView
         for i in glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):
             os.remove(i)
 
-        # Ask the user for a URL
-        url, ok = QInputDialog.getText(self.gui, 'Enter a URL', 'Enter a URL to browse below', text='https://www.noosfere.org/livres/editionslivre.asp?numitem=7385 ')
-        if not ok or not url:
-            return
+        # initialize clipboard so no old data will pollute results
+        cb = QApplication.clipboard()
+        cb.clear(mode=cb.Clipboard)
 
         # Launch a separate process to view the URL in WebEngine
-        self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.webengine_demo.main', 'url':url})
+        self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.webengine_demo.main', 'data':data})
 
         # sleep some like 5 seconds to wait for main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
         # according to the tempfile doc, this temp file MAY be system wide... CARE if more than ONE user runs calibre
@@ -74,15 +85,16 @@ class InterfacePlugin(InterfaceAction):
 
         # synch file is gone, meaning QWebEngineView process is closed so, we can collect the result in the system clipboard
         print("webengine-dialog process submitted")
-        cb = QApplication.clipboard()
+#        cb = QApplication.clipboard()
         choosen_url = cb.text(mode=cb.Clipboard)
         cb.clear(mode=cb.Clipboard)
 
-        print('choosen_url from clipboard',choosen_url)
+        if choosen_url:
+            print('choosen_url from clipboard',choosen_url, "type(choosen_url)", type(choosen_url))
+        else:
+            print('no change will take place...')
 
-
-        url, ok = QInputDialog.getText(self.gui, 'Enter a URL', 'Enter a URL to browse below', text="current directory : "+str(os.getcwd()))
-
+        return
 
 
 #     def launch_gui_app(self, name, args=(), kwargs=None, description=''):

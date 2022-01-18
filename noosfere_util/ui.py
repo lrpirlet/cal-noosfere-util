@@ -46,7 +46,7 @@ class InterfacePlugin(InterfaceAction):
         # should pass a list of names to get_icons. In this case, get_icons
         # will return a dictionary mapping names to QIcons. Names that
         # are not found in the zip file will result in null QIcons.
-        icon = get_icons('images/icon.png')
+        icon = get_icons('blue_icon/icon.png')
 
         # The qaction is automatically created from the action_spec defined
         # above
@@ -86,6 +86,7 @@ class InterfacePlugin(InterfaceAction):
         # synch file is gone, meaning QWebEngineView process is closed so, we can collect the result in the system clipboard
         print("webengine-dialog process submitted")
 #        cb = QApplication.clipboard()
+        print(cb.text(mode=cb.Clipboard))
         choosen_url = cb.text(mode=cb.Clipboard)
         cb.clear(mode=cb.Clipboard)
 

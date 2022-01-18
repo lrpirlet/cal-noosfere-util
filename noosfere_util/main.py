@@ -28,6 +28,7 @@ from PyQt5.QtWebEngineWidgets import *
 
 import tempfile
 import os
+import sys
 
 class MainWindow(QMainWindow):
 
@@ -36,65 +37,110 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.browser = QWebEngineView()
-        self.browser.setGeometry(300, 300, 1200, 800)
+        self.browser.resize(1200,800)
         self.browser.setUrl(QUrl("http://www.google.com"))
 
         self.setCentralWidget(self.browser)
 
-        navtb = QToolBar("Navigation")
-        navtb.setIconSize( QSize(80,25) )
-        self.addToolBar(navtb)
+    # set navigation toolbar
+        nav_tb = QToolBar("Navigation")
+        nav_tb.setIconSize(QSize(20,20))
+        self.addToolBar(nav_tb)
 
-        back_btn = QAction( QIcon('pitr_green_double_arrows_set_1.png'), "Back", self)
-        back_btn.setStatusTip("Back to previous page")
-        back_btn.triggered.connect( self.browser.back )
-        navtb.addAction(back_btn)
+        home_btn = QAction(get_icons('blue_icon/home.png'), "Home", self)
+        home_btn.setStatusTip("On va à la une de noosfere")                         # We go to the front page of noosfere
+        home_btn.triggered.connect(self.navigate_home)
+        nav_tb.addAction(home_btn)
 
-        next_btn = QAction( QIcon('pitr_green_double_arrows_set_2.png'), "Forward", self)
-        next_btn.setStatusTip("Forward to next page")
-        next_btn.triggered.connect( self.browser.forward )
-        navtb.addAction(next_btn)
+        back_btn = QAction(get_icons('blue_icon/back.png'), "Back", self)
+        back_btn.setStatusTip("On revient à la page précédente")                    # Back to the previous page
+        back_btn.triggered.connect(self.browser.back)
+        nav_tb.addAction(back_btn)
 
-        reload_btn = QAction( QIcon('refresh-icon4533.png'), "Reload", self)
-        reload_btn.setStatusTip("Reload page")
-        reload_btn.triggered.connect( self.browser.reload )
-        navtb.addAction(reload_btn)
+        next_btn = QAction(get_icons('blue_icon/forward.png'), "Forward", self)
+        next_btn.setStatusTip("On retourne à la page suivante")                     # Back to the next page
+        next_btn.triggered.connect(self.browser.forward)
+        nav_tb.addAction(next_btn)
 
-        self.urlbar = QLineEdit()
-        self.urlbar.returnPressed.connect( self.navigate_to_url )
-        navtb.addWidget(self.urlbar)
+        reload_btn = QAction(get_icons('blue_icon/reload.png'), "Reload", self)
+        reload_btn.setStatusTip("On recharge la page")                              # Reload the page
+        reload_btn.triggered.connect(self.browser.reload)
+        nav_tb.addAction(reload_btn)
+
+        stop_btn = QAction(get_icons('blue_icon/stop.png'), "Stop", self)
+        stop_btn.setStatusTip("On arrête de charger la page")                       # Stop loading the page
+        stop_btn.triggered.connect(self.browser.stop)
+        nav_tb.addAction(stop_btn)
+
+        self.urlbox = QLineEdit()
+        self.urlbox.returnPressed.connect(self.navigate_to_url)
+        self.urlbox.setStatusTip("Tu peut même introduire une adresse, hors noosfere, mais A TES RISQUES ET PERILS... noosfere est sûr ( https:// ), la toile par contre...")
+                                # You can even enter an address, outside of noosfere, but AT YOUR OWN RISK... noosfere is safe: ( https:// ), the web on the other side...
+        nav_tb.addWidget(self.urlbox)
 
         self.browser.urlChanged.connect(self.update_urlbar)
+        self.browser.loadStarted.connect(self.loading_title)
         self.browser.loadFinished.connect(self.update_title)
 
-        exit_btn = QAction( QIcon('exit150-33.png'), "Select and exit", self)
-        exit_btn.setStatusTip("Select URL and exit to calibre")
-        exit_btn.triggered.connect( self.select_and_exit )
-        navtb.addAction(exit_btn)
+        abort_btn = QAction(get_icons('blue_icon/abort.png'), "Abort", self)
+        abort_btn.setStatusTip("On arrête tout, on oublie tout et on ne change rien")
+                              # Stop everything, forget everything and change nothing
+        abort_btn.triggered.connect(self.close)
+        nav_tb.addAction(abort_btn)
+
+        exit_btn = QAction(get_icons('blue_icon/exit.png'), "Select and exit", self)
+        exit_btn.setStatusTip("On sélectionne cet URL pour extraction de nsfr_id, on continue")
+                             # select this URL for extraction of nsfr_id, continue
+        exit_btn.triggered.connect(self.select_and_exit)
+        nav_tb.addAction(exit_btn)
 
         self.show()
 
+        self.setStatusBar(QStatusBar(self))
+
+  # Navigation actions
     def initial_url(self,url="http://www.google.com"):
         self.browser.setUrl(QUrl(url))
+        #self.urlbox.setText(url)
 
-    def navigate_to_url(self): # Does not receive the Url
-        q = QUrl( self.urlbar.text() )
+    def navigate_home(self):
+        self.browser.setUrl( QUrl("https://www.noosfere.org/") )
+
+    def navigate_to_url(self):                    # Does not receive the Url
+        q = QUrl( self.urlbox.text() )
         self.browser.setUrl(q)
 
     def update_urlbar(self, q):
-        self.urlbar.setText( q.toString() )
-        self.urlbar.setCursorPosition(0)
+        self.urlbox.setText( q.toString() )
+        self.urlbox.setCursorPosition(0)
+
+    def loading_title(self):
+        title="En téléchargement de l'url"
+        self.setWindowTitle(title)
 
     def update_title(self):
         title = self.browser.page().title()
         self.setWindowTitle(title)
 
-    def select_and_exit(self):
+    def select_and_exit(self):                    #sent q over the clipboard then exit
         cb = QApplication.clipboard()
         cb.clear(mode=cb.Clipboard)
-        cb.setText(self.urlbar.text(), mode=cb.Clipboard)
-
+        cb.setText(self.urlbox.text(), mode=cb.Clipboard)
+        
         qApp.quit()     # exit application
+        
+
+    def closeEvent(self, event):                  # hit window exit "X" button
+        qDebug('MainWindow.closeEvent()')
+        reply = QMessageBox.question(self, 'Vraiment', "Quitter et ne rien changer", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
+        if reply == QMessageBox.Yes:
+            event.accept()
+            self.que.put("")
+            super().closeEvent(event)
+        else:
+            event.ignore()
+
+
 
 def main(data):
     #     def launch_gui_app(self, name, args=(), kwargs=None, description=''):
@@ -109,19 +155,19 @@ def main(data):
     # Initialize environment..
 
     # create a temp file... while it exists ui.py will wait... this file will disappear with the process
-    #tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb")
-    tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb",mode='w+',buffering=1, delete=False)
-    tfp.write(str(type(data))+"\n")
-    tfp.write("data : "+str(data)+"\n")
+    tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb")
+    # tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb",mode='w+',buffering=1, delete=False)
+    # tfp.write(str(type(data))+"\n")
+    # tfp.write("data : "+str(data)+"\n")
 
     # retrieve component from data
     #        data = [url, isbn, auteurs, titre]
     url, isbn, auteurs, titre = data[0], data[1], data[2], data[3]
 
-    tfp.write("url     : "+url+"\n")
-    tfp.write("isbn    : "+isbn+"\n")
-    tfp.write("auteurs : "+auteurs+"\n")
-    tfp.write("titre   : "+titre+"\n")
+    # tfp.write("url     : "+url+"\n")
+    # tfp.write("isbn    : "+isbn+"\n")
+    # tfp.write("auteurs : "+auteurs+"\n")
+    # tfp.write("titre   : "+titre+"\n")
 
     # Start QWebEngineView and associated widgets
     app = Application([])

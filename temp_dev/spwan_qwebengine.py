@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
     # set browser, make it central
         self.browser = QWebEngineView()
         self.browser.resize(1200,800)
-        self.browser.setUrl(QUrl(url))
+        self.browser.setUrl(QUrl("http://www.google.com"))
 
         self.setCentralWidget(self.browser)
 
@@ -133,7 +133,7 @@ class MainWindow(QMainWindow):
   # Navigation actions
     def initial_url(self,url="http://www.google.com"):
         self.browser.setUrl(QUrl(url))
-        self.urlbox.setText(url)
+        #self.urlbox.setText(url)
 
     def navigate_home(self):
         self.browser.setUrl( QUrl("https://www.noosfere.org/") )

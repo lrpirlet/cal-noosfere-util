@@ -32,9 +32,12 @@ import sys
 
 class MainWindow(QMainWindow):
 
-    def __init__(self, *args, **kwargs):
+#    def __init__(self, *args, **kwargs):
+    def __init__(self, titre):
         #super(MainWindow,self).__init__(*args, **kwargs)
         super().__init__()
+
+        self.titre = titre
 
         self.browser = QWebEngineView()
         self.browser.resize(1200,800)
@@ -42,7 +45,25 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.browser)
 
-    # set navigation toolbar
+  # set navigation toolbar
+        info_tb = QToolBar("Get")
+        info_tb.setIconSize(QSize(60,30))
+        self.addToolBar(Qt.BottomToolBarArea, info_tb)
+
+        Titre_btn = QAction(QIcon('./blue_icon/Titre.png'), "Titre", self)
+        Titre_btn.setStatusTip("Montre le Titre")                                   # show title
+        Titre_btn.triggered.connect(self.set_titre_info)
+        info_tb.addAction(Titre_btn)
+
+        self.infobox = QLineEdit()
+        self.infobox.setReadOnly(True)
+        self.infobox.setStatusTip(" Aucune action, ce box montre l'ISBN, le(s) Auteur(s) ou le Titre, protégé en écriture."
+                                  " Tout ou partie du texte peut être sélectionné pour copier et coller")
+                                 # No action, this box displays the ISBN, the Author(s) or the Title, in write protect.
+                                 # Part or the whole text may be selected for copy paste.
+        info_tb.addWidget(self.infobox)
+
+  # set navigation toolbar
         nav_tb = QToolBar("Navigation")
         nav_tb.setIconSize(QSize(20,20))
         self.addToolBar(nav_tb)
@@ -98,6 +119,10 @@ class MainWindow(QMainWindow):
 
         self.setStatusBar(QStatusBar(self))
 
+  # get info actions
+    def set_titre_info(self):
+        self.infobox.setText( self.titre )
+
   # Navigation actions
     def initial_url(self,url="http://www.google.com"):
         self.browser.setUrl(QUrl(url))
@@ -126,9 +151,7 @@ class MainWindow(QMainWindow):
         cb = QApplication.clipboard()
         cb.clear(mode=cb.Clipboard)
         cb.setText(self.urlbox.text(), mode=cb.Clipboard)
-        
         qApp.quit()     # exit application
-        
 
     def closeEvent(self, event):                  # hit window exit "X" button
         qDebug('MainWindow.closeEvent()')
@@ -139,7 +162,6 @@ class MainWindow(QMainWindow):
             super().closeEvent(event)
         else:
             event.ignore()
-
 
 
 def main(data):
@@ -172,7 +194,7 @@ def main(data):
     # Start QWebEngineView and associated widgets
     app = Application([])
 
-    window = MainWindow()
+    window = MainWindow(titre)
     window.initial_url(url)
     app.exec_()
 

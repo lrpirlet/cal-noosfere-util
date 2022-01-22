@@ -61,9 +61,9 @@ class InterfacePlugin(InterfaceAction):
         #   return
         # set url, isbn, auteurs and titre
         url="https://www.noosfere.org/livres/noosearch.asp"
-        isbn = "2-277-12362-5"
-        auteurs = "Alfred Elton VAN VOGT"
-        titre = "Un tres tres long titre qui n'a rien a voir avec l'auteur ou l'ISBN"
+        isbn = "2266027646"
+        auteurs = "Philip José Farmer"
+        titre = "L'Odyssée verte"
         data = [url, isbn, auteurs, titre]
 
         # remove all trace of an old synchronization file between calibre and the outside process running QWebEngineView

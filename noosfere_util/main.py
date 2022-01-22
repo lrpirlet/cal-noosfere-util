@@ -33,24 +33,37 @@ import sys
 class MainWindow(QMainWindow):
 
 #    def __init__(self, *args, **kwargs):
-    def __init__(self, titre):
+    def __init__(self, data):
         #super(MainWindow,self).__init__(*args, **kwargs)
         super().__init__()
 
-        self.titre = titre
+        # data = [url, isbn, auteurs, titre]
+        self.isbn, self.auteurs, self.titre = data[1], data[2], data[3]
 
         self.browser = QWebEngineView()
-        self.browser.resize(1200,800)
+        self.browser.resize(1200,900)
         self.browser.setUrl(QUrl("http://www.google.com"))
 
         self.setCentralWidget(self.browser)
 
-  # set navigation toolbar
+  # set info toolbar
         info_tb = QToolBar("Get")
         info_tb.setIconSize(QSize(60,30))
         self.addToolBar(Qt.BottomToolBarArea, info_tb)
 
-        Titre_btn = QAction(QIcon('./blue_icon/Titre.png'), "Titre", self)
+        ISBN_btn = QAction(get_icons('blue_icon/ISBN.png'), "ISBN", self)
+        ISBN_btn.setStatusTip("Montre et copie le ISBN dans le presse-papier pour coller dans Mots-clefs à rechercher")
+                                # Show authors, copy in clipboard to paste in search field of noosfere
+        ISBN_btn.triggered.connect(self.set_isbn_info)
+        info_tb.addAction(ISBN_btn)
+
+        Auteurs_btn = QAction(get_icons('blue_icon/Auteurs.png'), "Auteur(s)", self)
+        Auteurs_btn.setStatusTip("Montre et copie le(s) Auteur(s) dans le presse-papier pour coller dans Mots-clefs à rechercher")
+                                # Show authors, copy in clipboard to paste in search field of noosfere
+        Auteurs_btn.triggered.connect(self.set_auteurs_info)
+        info_tb.addAction(Auteurs_btn)
+
+        Titre_btn = QAction(get_icons('blue_icon/Titre.png'), "Titre", self)
         Titre_btn.setStatusTip("Montre le Titre")                                   # show title
         Titre_btn.triggered.connect(self.set_titre_info)
         info_tb.addAction(Titre_btn)
@@ -116,16 +129,31 @@ class MainWindow(QMainWindow):
         nav_tb.addAction(exit_btn)
 
         self.show()
-
         self.setStatusBar(QStatusBar(self))
 
   # get info actions
+    @pyqtSlot()
+    def set_isbn_info(self):
+        self.infobox.setText( self.isbn )
+        cb = Application.clipboard()
+        cb.clear(mode=cb.Clipboard)
+        cb.setText(self.isbn.replace("-",""), mode=cb.Clipboard)
+
+    @pyqtSlot()
+    def set_auteurs_info(self):
+        self.infobox.setText( self.auteurs )
+        cb = Application.clipboard()
+        cb.clear(mode=cb.Clipboard)
+        cb.setText(self.auteurs, mode=cb.Clipboard)
+
+    @pyqtSlot()
     def set_titre_info(self):
         self.infobox.setText( self.titre )
 
   # Navigation actions
     def initial_url(self,url="http://www.google.com"):
         self.browser.setUrl(QUrl(url))
+        cb = Application.clipboard()
         #self.urlbox.setText(url)
 
     def navigate_home(self):
@@ -148,7 +176,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(title)
 
     def select_and_exit(self):                    #sent q over the clipboard then exit
-        cb = QApplication.clipboard()
+        cb = Application.clipboard()
         cb.clear(mode=cb.Clipboard)
         cb.setText(self.urlbox.text(), mode=cb.Clipboard)
         qApp.quit()     # exit application
@@ -158,7 +186,6 @@ class MainWindow(QMainWindow):
         reply = QMessageBox.question(self, 'Vraiment', "Quitter et ne rien changer", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
             event.accept()
-            self.que.put("")
             super().closeEvent(event)
         else:
             event.ignore()
@@ -193,8 +220,7 @@ def main(data):
 
     # Start QWebEngineView and associated widgets
     app = Application([])
-
-    window = MainWindow(titre)
+    window = MainWindow(data)
     window.initial_url(url)
     app.exec_()
 

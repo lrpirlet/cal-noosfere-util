@@ -1,11 +1,66 @@
-from PyQt5.QtCore import pyqtSlot, qDebug, QUrl, QSize #, Qt
+from PyQt5.QtCore import pyqtSlot, qDebug, QUrl, QSize, Qt, pyqtSignal
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QToolBar, QAction, QLineEdit, 
                                 QStatusBar, QMessageBox, qApp, QWidget, QVBoxLayout,
-                                QHBoxLayout, QPushButton)
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+                                QHBoxLayout, QPushButton, QShortcut)
+from PyQt5.QtGui import QIcon, QKeySequence
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 
 import sys
+class Search_Panel(QWidget):
+    searched = pyqtSignal(str, QWebEnginePage.FindFlag)
+    closed = pyqtSignal()
+
+    def __init__(self,parent=None):
+        super(Search_Panel,self).__init__(parent)
+
+        self.case_btn = QPushButton('Match &Case', checkable=True)
+        self.case_btn.clicked.connect(self.update_searching)
+        if isinstance(self.case_btn, QPushButton): self.case_btn.clicked.connect(self.setFocus)
+
+        next_btn = QPushButton('&Next')
+        next_btn.clicked.connect(self.update_searching)
+        if isinstance(next_btn, QPushButton): next_btn.clicked.connect(self.setFocus)
+
+        prev_btn = QPushButton('&Previous')
+        prev_btn.clicked.connect(self.on_preview_find)
+        if isinstance(prev_btn, QPushButton): prev_btn.clicked.connect(self.setFocus)
+
+        done_btn = QPushButton("&Done")
+        done_btn.clicked.connect(self.closed)
+        if isinstance(done_btn, QPushButton): done_btn.clicked.connect(self.setFocus)
+
+        self.srch_dsp = QLineEdit()
+        if isinstance(self.srch_dsp, QPushButton): self.srch_dsp.clicked.connect(self.setFocus)
+        self.setFocusProxy(self.srch_dsp)
+        self.srch_dsp.textChanged.connect(self.update_searching)
+        self.srch_dsp.returnPressed.connect(self.update_searching)
+        self.closed.connect(self.srch_dsp.clear)
+
+        self.srch_lt = QHBoxLayout(self)
+        self.srch_lt.addWidget(self.case_btn)
+        self.srch_lt.addWidget(self.srch_dsp)
+        self.srch_lt.addWidget(next_btn)
+        self.srch_lt.addWidget(prev_btn)
+        self.srch_lt.addWidget(done_btn)
+
+        QShortcut(QKeySequence.FindNext, self, activated=next_btn.animateClick)        # simule un click de souris de .1 secondes
+        QShortcut(QKeySequence.FindPrevious, self, activated=prev_btn.animateClick)
+        QShortcut(QKeySequence(Qt.Key_Escape), self.srch_dsp, activated=self.closed)
+
+    @pyqtSlot()
+    def on_preview_find(self):
+        self.update_searching(QWebEnginePage.FindBackward)
+
+    @pyqtSlot()
+    def update_searching(self, direction=QWebEnginePage.FindFlag()):
+        flag = direction
+        if self.case_btn.isChecked():
+            flag |= QWebEnginePage.FindCaseSensitively
+        self.searched.emit(self.srch_dsp.text(), flag)
+
+    def showEvent(self, event):
+        super(Search_Panel, self).showEvent(event)
+        self.setFocus(True)
 
 class MainWindow(QMainWindow):
     def __init__(self, data):
@@ -31,9 +86,9 @@ class MainWindow(QMainWindow):
         self.isbn_btn.clicked.connect(self.set_isbn_info)
 
         self.isbn_dsp = QLineEdit()
-        self.isbn_dsp.setText(self.isbn)
         self.isbn_dsp.setReadOnly(True)
-        self.isbn_dsp.setStatusTip(" Aucune action, ce box montre l'ISBN protégé en écriture."
+        self.isbn_dsp.setText(self.isbn)
+        self.isbn_dsp.setStatusTip(" Aucune action, cette boite montre l'ISBN protégé en écriture."
                                   " Tout ou partie du texte peut être sélectionné pour copier et coller")
                                  # No action, this box displays the ISBN write protected.
                                  # Part or the whole text may be selected for copy paste.
@@ -49,9 +104,9 @@ class MainWindow(QMainWindow):
         self.auteurs_btn.clicked.connect(self.set_auteurs_info)
 
         self.auteurs_dsp = QLineEdit()
-        self.auteurs_dsp.setText(self.auteurs)
         self.auteurs_dsp.setReadOnly(True)
-        self.auteurs_dsp.setStatusTip(" Aucune action, ce box montre le ou les Auteur(s) protégé en écriture."
+        self.auteurs_dsp.setText(self.auteurs)
+        self.auteurs_dsp.setStatusTip(" Aucune action, cette boite montre le ou les Auteur(s) protégé en écriture."
                                   " Tout ou partie du texte peut être sélectionné pour copier et coller")
                                  # No action, this box displays the the Author(s) write protected.
                                  # Part or the whole text may be selected for copy paste.
@@ -66,10 +121,10 @@ class MainWindow(QMainWindow):
         self.titre_btn.clicked.connect(self.set_titre_info)
 
         self.titre_dsp = QLineEdit()
-        self.titre_dsp.setText(self.titre)
         self.titre_dsp.setReadOnly(True)
-        self.titre_dsp.setStatusTip(" Aucune action, ce box montre le Titre protégé en écriture."
-                                  " Tout ou partie du texte peut être sélectionné pour copier et coller")
+        self.titre_dsp.setText(self.titre)
+        self.titre_dsp.setStatusTip(" Aucune action, cette boite montre le Titre protégé en écriture."
+                                  " Tout ou partie du texte peut être sélectionné")
                                  # No action, this box displays the Title write protected.
                                  # Part or the whole text may be selected for copy paste.
 
@@ -77,7 +132,16 @@ class MainWindow(QMainWindow):
         self.titre_lt.addWidget(self.titre_btn)
         self.titre_lt.addWidget(self.titre_dsp)
 
-  # put all that together center aand size it
+  # search bar hidden when inactive ready to find something (I hope :-) )
+        self.search_pnl = Search_Panel()
+        self.search_toolbar = QToolBar()
+        self.search_toolbar.addWidget(self.search_pnl)
+        self.addToolBar(Qt.BottomToolBarArea, self.search_toolbar)
+        self.search_toolbar.hide()
+        self.search_pnl.searched.connect(self.on_searched)
+        self.search_pnl.closed.connect(self.search_toolbar.hide)
+
+  # put all that together center and size it
         layout = QVBoxLayout()
         layout.addWidget(self.browser)        
         layout.addLayout(self.isbn_lt)
@@ -95,11 +159,6 @@ class MainWindow(QMainWindow):
         nav_tb.setIconSize(QSize(20,20))
         self.addToolBar(nav_tb)
 
-        home_btn = QAction(QIcon('./blue_icon/home.png'), "Home", self)
-        home_btn.setStatusTip("On va à la recherche avancée de noosfere")                         # We go to the front page of noosfere
-        home_btn.triggered.connect(self.navigate_home)
-        nav_tb.addAction(home_btn)
-
         back_btn = QAction(QIcon('./blue_icon/back.png'), "Back", self)
         back_btn.setStatusTip("On revient à la page précédente")                    # Back to the previous page
         back_btn.triggered.connect(self.browser.back)
@@ -115,10 +174,21 @@ class MainWindow(QMainWindow):
         reload_btn.triggered.connect(self.browser.reload)
         nav_tb.addAction(reload_btn)
 
+        home_btn = QAction(QIcon('./blue_icon/home.png'), "Home", self)
+        home_btn.setStatusTip("On va à la recherche avancée de noosfere")                         # We go to the front page of noosfere
+        home_btn.triggered.connect(self.navigate_home)
+        nav_tb.addAction(home_btn)
+
         stop_btn = QAction(QIcon('./blue_icon/stop.png'), "Stop", self)
         stop_btn.setStatusTip("On arrête de charger la page")                       # Stop loading the page
         stop_btn.triggered.connect(self.browser.stop)
         nav_tb.addAction(stop_btn)
+
+        find_btn = QAction(QIcon('./blue_icon/search.png'), "Search", self)
+        find_btn.setStatusTip("On arrête de charger la page")                       # Stop loading the page
+        find_btn.triggered.connect(self.wake_search_panel)
+        find_btn.setShortcut(QKeySequence.Find)
+        nav_tb.addAction(find_btn)
 
         self.urlbox = QLineEdit()
         self.urlbox.returnPressed.connect(self.navigate_to_url)
@@ -134,7 +204,7 @@ class MainWindow(QMainWindow):
         abort_btn = QAction(QIcon('./blue_icon/abort.png'), "Abort", self)
         abort_btn.setStatusTip("On arrête tout, on oublie tout et on ne change rien")
                               # Stop everything, forget everything and change nothing
-        abort_btn.triggered.connect(self.close)
+        abort_btn.triggered.connect(self.close)             # may need another slot for abort this book , proceed next
         nav_tb.addAction(abort_btn)
 
         exit_btn = QAction(QIcon('./blue_icon/exit.png'), "Select and exit", self)
@@ -143,9 +213,23 @@ class MainWindow(QMainWindow):
         exit_btn.triggered.connect(self.select_and_exit)
         nav_tb.addAction(exit_btn)
 
+  # set status bar
+        self.setStatusBar(QStatusBar(self))
+
+  # make all that visible
+
         self.show()
 
-        self.setStatusBar(QStatusBar(self))
+    @pyqtSlot(str, QWebEnginePage.FindFlag)
+    def on_searched(self, text, flag):
+        def callback(found):
+            if text and not found:
+                self.statusBar().show()
+                self.statusBar().showMessage('Not found')
+            else:
+                self.statusBar().hide()
+        self.browser.findText(text, flag, callback)
+
 
   # info boxes actions
     @pyqtSlot()
@@ -163,7 +247,10 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def set_titre_info(self):
         self.titre_dsp.setText(self.titre)
-
+ 
+    @pyqtSlot()
+    def wake_search_panel(self):
+        self.search_toolbar.show()
 
   # Navigation actions
     def initial_url(self, url="http://www.google.com"):
@@ -192,16 +279,17 @@ class MainWindow(QMainWindow):
         title = self.browser.page().title()
         self.setWindowTitle(title)
 
-    def select_and_exit(self):                    #sent q over the clipboard then exit
+    def select_and_exit(self):                    #sent response over the clipboard then exit this book 
         self.cb.clear(mode=self.cb.Clipboard)
         self.cb.setText(self.urlbox.text(), mode=self.cb.Clipboard)
         qApp.quit()     # exit application
 
-    def closeEvent(self, event):                  # hit window exit "X" button
+    def closeEvent(self, event):                  # abort hit window exit "X" button
         qDebug('MainWindow.closeEvent()')
-        reply = QMessageBox.question(self, 'Vraiment', "Quitter et ne rien changer", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
+        reply = QMessageBox.question(self, 'Vraiment', "Quitter et ne plus rien changer", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
             event.accept()
+            self.cb.clear(mode=self.cb.Clipboard)
             super().closeEvent(event)
         else:
             event.ignore()

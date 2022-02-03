@@ -199,7 +199,7 @@ def main(data):
     #
     # from jobs.py in gui2 in calibre in src...
     #
-    # self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.webengine_demo.main', 'url':url})
+    # self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.noosfere_util.main', 'url':url})
 
     # Initialize environment..
 

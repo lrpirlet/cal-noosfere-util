@@ -24,14 +24,14 @@ import os
 
 class InterfacePlugin(InterfaceAction):
 
-    name = 'WebEngine Plugin Demo'
+    name = 'noosfere utilités'
 
     # Declare the main action associated with this plugin
     # The keyboard shortcut can be None if you dont want to use a keyboard
     # shortcut. Remember that currently calibre has no central management for
     # keyboard shortcuts, so try to use an unusual/unused shortcut.
-    action_spec = ('WebEngine Plugin Demo', None,
-            'Run the WebEngine Plugin Demo', 'Ctrl+Shift+F2')
+    action_spec = ("noosfere utilités", None,
+            "lance les utilités pour noosfere DB", None)
 
     def genesis(self):
         # This method is called once per plugin, do initial setup here
@@ -46,7 +46,7 @@ class InterfacePlugin(InterfaceAction):
         # should pass a list of names to get_icons. In this case, get_icons
         # will return a dictionary mapping names to QIcons. Names that
         # are not found in the zip file will result in null QIcons.
-        icon = get_icons('blue_icon/icon.png')
+        icon = get_icons('blue_icon/mainicon.png')
 
         # The qaction is automatically created from the action_spec defined
         # above
@@ -75,7 +75,8 @@ class InterfacePlugin(InterfaceAction):
         cb.clear(mode=cb.Clipboard)
 
         # Launch a separate process to view the URL in WebEngine
-        self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.webengine_demo.main', 'data':data})
+        self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.noosfere_util.main', 'data':data})
+        # WARNING: "webengine-dialog" is a defined function in calibre\src\calibre\utils\ipc\worker.py ...DO NOT CHANGE...
 
         # sleep some like 5 seconds to wait for main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
         # according to the tempfile doc, this temp file MAY be system wide... CARE if more than ONE user runs calibre

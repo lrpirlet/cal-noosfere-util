@@ -8,8 +8,9 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QToolBar, QAction, QLine
                                 QHBoxLayout, QPushButton, QShortcut)
 from PyQt5.QtGui import QIcon, QKeySequence
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
+from json import dumps
 
-from calibre.gui2 import Application
+#from calibre.gui2 import Application
 import tempfile
 import os
 import sys
@@ -26,7 +27,7 @@ class MainWindow(QMainWindow):
         qDebug("auteurs : "+str(self.auteurs.encode('utf-8')))
         qDebug("titre   : "+str(self.titre.encode('utf-8')))
 
-        self.cb = Application.clipboard()
+        self.cb = QApplication.clipboard()
 
   # browser
         self.browser = QWebEngineView()
@@ -110,11 +111,10 @@ class MainWindow(QMainWindow):
         if isinstance(self.done_btn, QPushButton): self.done_btn.clicked.connect(self.setFocus)
 
         self.srch_lt = QHBoxLayout(self)
-        self.srch_lt.addWidget(self.done_btn)
-        self.srch_lt.addWidget(self.srch_dsp)
         self.srch_lt.addWidget(self.next_btn)
         self.srch_lt.addWidget(self.prev_btn)
-
+        self.srch_lt.addWidget(self.srch_dsp)
+        self.srch_lt.addWidget(self.done_btn)
 
         QShortcut(QKeySequence.FindNext, self, activated=self.next_btn.animateClick)        # simule un click de souris de .1 secondes
         QShortcut(QKeySequence.FindPrevious, self, activated=self.prev_btn.animateClick)
@@ -169,11 +169,6 @@ class MainWindow(QMainWindow):
                                 # You can even enter an address, outside of noosfere, but AT YOUR OWN RISK... noosfere is safe: (https://), the web on the other side...
         nav_tb.addWidget(self.urlbox)
 
-        self.browser.urlChanged.connect(self.update_urlbar)
-        self.browser.loadStarted.connect(self.loading_title)
-        self.browser.loadProgress.connect(self.reloading_title)
-        self.browser.loadFinished.connect(self.update_title)
-
         abort_btn = QAction(get_icons('blue_icon/abort.png'), "Abort", self)
         abort_btn.setStatusTip("On arrête tout, on oublie tout et on ne change rien")
                               # Stop everything, forget everything and change nothing
@@ -185,6 +180,12 @@ class MainWindow(QMainWindow):
                              # select this URL for extraction of nsfr_id, continue
         exit_btn.triggered.connect(self.select_and_exit)
         nav_tb.addAction(exit_btn)
+
+        self.browser.urlChanged.connect(self.update_urlbar)
+        self.browser.urlChanged.connect(self.srch_dsp.clear)
+        self.browser.loadStarted.connect(self.loading_title)
+        self.browser.loadProgress.connect(self.reloading_title)
+        self.browser.loadFinished.connect(self.update_title)
 
   # set status bar
         self.setStatusBar(QStatusBar(self))
@@ -208,23 +209,35 @@ class MainWindow(QMainWindow):
         self.update_searching(QWebEnginePage.FindBackward)
 
   # info boxes actions
+    def set_noosearch_page(self, html_str):
+        if self.urlbox.text() == "https://www.noosfere.org/livres/noosearch.asp":
+            self.html = html_str
+            if self.iam == "isbn": val = self.isbn
+            elif self.iam == "auteurs": val = self.auteurs
+            else: val = self.titre
+            self.browser.page().runJavaScript("document.getElementsByName('Mots')[1].value =" + dumps(val))
+            if self.iam == "auteurs":
+                self.browser.page().runJavaScript("document.getElementsByName('auteurs')[0].checked = true")
+                self.browser.page().runJavaScript("document.getElementsByName('livres')[0].checked = false")
+            else:
+                self.browser.page().runJavaScript("document.getElementsByName('livres')[0].checked = true")
+                self.browser.page().runJavaScript("document.getElementsByName('auteurs')[0].checked = false")
+
     @pyqtSlot()
     def set_isbn_info(self):
         self.isbn_dsp.setText(self.isbn)
-        self.cb.clear(mode=self.cb.Clipboard)
-        self.cb.setText(self.isbn, mode=self.cb.Clipboard)
+        self.iam = "isbn"
+        self.browser.page().toHtml(self.set_noosearch_page)
 
     @pyqtSlot()
     def set_auteurs_info(self):
-        self.auteurs_dsp.setText(self.auteurs)
-        self.cb.clear(mode=self.cb.Clipboard)
-        self.cb.setText(self.auteurs, mode=self.cb.Clipboard)
+        self.iam = "auteurs"
+        self.browser.page().toHtml(self.set_noosearch_page)
 
     @pyqtSlot()
     def set_titre_info(self):
-        self.titre_dsp.setText(self.titre)
-        self.cb.clear(mode=self.cb.Clipboard)
-        self.cb.setText(self.titre, mode=self.cb.Clipboard)
+        self.iam = "titre"
+        self.browser.page().toHtml(self.set_noosearch_page)
 
   # Navigation actions
     def initial_url(self, url="http://www.google.com"):
@@ -254,6 +267,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(title)
 
     def select_and_exit(self):                    #sent response over the clipboard then exit this book
+        self.srch_dsp.clear()
         self.cb.clear(mode=self.cb.Clipboard)
         self.cb.setText(self.urlbox.text(), mode=self.cb.Clipboard)
         qApp.quit()     # exit application
@@ -263,6 +277,7 @@ class MainWindow(QMainWindow):
         reply = QMessageBox.question(self, 'Vraiment', "Quitter et ne plus rien changer", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
             event.accept()
+            self.srch_dsp.clear()
             self.cb.clear(mode=self.cb.Clipboard)
             super().closeEvent(event)
         else:
@@ -297,10 +312,10 @@ def main(data):
     # tfp.write("titre   : "+titre+"\n")
 
     # Start QWebEngineView and associated widgets
-    app = Application([])
+    app = QApplication([])
     window = MainWindow(data)
     window.initial_url(url)
-    app.exec_()
+    sys.exit(app.exec_())
 
     # signal ui.py that we are finished
     tfp.close           # close temp file

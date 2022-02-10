@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # vim:fileencoding=UTF-8:ts=4:sw=4:sta:et:sts=4:ai
 
-# License: GPLv3 Copyright: 2019, Kovid Goyal <kovid at kovidgoyal.net>
+__license__   = 'GPL v3'
+__copyright__ = '2021, Louis Richard Pirlet'
 
 if False:
     # This is here to keep my python error checker from complaining about
@@ -46,7 +47,7 @@ class InterfacePlugin(InterfaceAction):
         # should pass a list of names to get_icons. In this case, get_icons
         # will return a dictionary mapping names to QIcons. Names that
         # are not found in the zip file will result in null QIcons.
-        icon = get_icons('blue_icon/mainicon.png')
+        icon = get_icons('blue_icon/top_icon.png')
 
         # The qaction is automatically created from the action_spec defined
         # above
@@ -75,10 +76,10 @@ class InterfacePlugin(InterfaceAction):
         cb.clear(mode=cb.Clipboard)
 
         # Launch a separate process to view the URL in WebEngine
-        self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.noosfere_util.main', 'data':data})
+        self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.noosfere_util.web_main', 'data':data})
         # WARNING: "webengine-dialog" is a defined function in calibre\src\calibre\utils\ipc\worker.py ...DO NOT CHANGE...
 
-        # sleep some like 5 seconds to wait for main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
+        # sleep some like 5 seconds to wait for web_main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
         # according to the tempfile doc, this temp file MAY be system wide... CARE if more than ONE user runs calibre
         sleep(5)                # so there is time enough to create atemp file with sync-cal-qweb prefix
         while glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):         # wait till file is removed

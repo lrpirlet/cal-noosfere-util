@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # vim:fileencoding=utf-8
-# License: GPL v3 Copyright: 2019, Kovid Goyal <kovid at kovidgoyal.net>
+
+__license__   = 'GPL v3'
+__copyright__ = '2021, Louis Richard Pirlet'
 
 from PyQt5.QtCore import pyqtSlot, qDebug, QUrl, QSize
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QToolBar, QAction, QLineEdit,
@@ -16,16 +18,18 @@ import os
 import sys
 
 class MainWindow(QMainWindow):
+    """
+    this process, running in the calibre environment, is detached from calibre program
+    It does receive data from noofere_util, processes it, then communicates back the result and dies.
+    In fact this is a WEB browser centered on www.noosfere.org to get the nsfr_id of a choosen volume.
+
+    """
 
     def __init__(self, data):
         super().__init__()
 
         # data = [url, isbn, auteurs, titre]
         self.isbn, self.auteurs, self.titre = data[1].replace("-",""), data[2], data[3]
-
-        qDebug("isbn    : "+self.isbn)
-        qDebug("auteurs : "+str(self.auteurs.encode('utf-8')))
-        qDebug("titre   : "+str(self.titre.encode('utf-8')))
 
         self.cb = QApplication.clipboard()
 
@@ -315,7 +319,8 @@ def main(data):
     app = QApplication([])
     window = MainWindow(data)
     window.initial_url(url)
-    sys.exit(app.exec_())
+    app.exec()
+    #sys.exit(app.exec())
 
     # signal ui.py that we are finished
     tfp.close           # close temp file

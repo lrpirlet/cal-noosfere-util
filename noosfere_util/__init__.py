@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # vim:fileencoding=UTF-8:ts=4:sw=4:sta:et:sts=4:ai
-# License: GPLv3 Copyright: 2019, Kovid Goyal <kovid at kovidgoyal.net>
+
+__license__   = 'GPL v3'
+__copyright__ = '2021, Louis Richard Pirlet'
 
 
 # The class that all Interface Action plugin wrappers must inherit from
@@ -23,7 +25,7 @@ class noosfereutil(InterfaceActionBase):
                         )#"Annule les champs tels que series remplis par erreur. "
                         #"Redistribue les informations liées aux editeurs")
     supported_platforms = ['windows', 'osx', 'linux']
-    author              = 'Kovid Goyal'
+    author              = 'Louis Richard Pirlet'
     version             = (0, 5, 0)
     minimum_calibre_version = (5, 35, 0)
 

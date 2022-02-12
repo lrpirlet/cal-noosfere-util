@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
     def __init__(self, data):
         super().__init__()
 
-        # data = [url, isbn, auteurs, titre]
+        # data = [book_id, isbn, auteurs, titre]
         self.isbn, self.auteurs, self.titre = data[1].replace("-",""), data[2], data[3]
 
         self.cb = QApplication.clipboard()
@@ -289,14 +289,6 @@ class MainWindow(QMainWindow):
 
 
 def main(data):
-    #     def launch_gui_app(self, name, args=(), kwargs=None, description=''):
-    #         job = ParallelJob(name, description, lambda x: x,
-    #                 args=list(args), kwargs=kwargs or {})
-    #         self.serverserver.run_job(job, gui=True, redirect_output=False)
-    #
-    # from jobs.py in gui2 in calibre in src...
-    #
-    # self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.noosfere_util.main', 'url':url})
 
     # Initialize environment..
 
@@ -307,10 +299,10 @@ def main(data):
     # tfp.write("data : "+str(data)+"\n")
 
     # retrieve component from data
-    #        data = [url, isbn, auteurs, titre]
-    url, isbn, auteurs, titre = data[0], data[1], data[2], data[3]
+    #        data = [book_id, isbn, auteurs, titre]
+    book_id, isbn, auteurs, titre = data[0], data[1], data[2], data[3]
 
-    # tfp.write("url     : "+url+"\n")
+    # tfp.write("book_id : "+book_id+"\n")
     # tfp.write("isbn    : "+isbn+"\n")
     # tfp.write("auteurs : "+auteurs+"\n")
     # tfp.write("titre   : "+titre+"\n")
@@ -318,7 +310,7 @@ def main(data):
     # Start QWebEngineView and associated widgets
     app = QApplication([])
     window = MainWindow(data)
-    window.initial_url(url)
+    window.initial_url("https://www.noosfere.org/livres/noosearch.asp")     # jump directly to noosfere advanced search page
     app.exec()
     #sys.exit(app.exec())
 

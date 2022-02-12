@@ -1,5 +1,6 @@
 This plugin should complement cal-noosfere.
-Issues: 
+
+Issues in cal-noosfere: 
 1 Cal-noosfere CANNOT wipe out a new metadata empty field
   example: if a previous metadata source download, from anywhere, did set the series
   to "something", and noosfere metadata source finds NO series,
@@ -9,10 +10,10 @@ Issues:
   with possibly a different author and/or title and/or ISBN. I made some choice but this
   may NOT be the best fit. Solution is to manually go to the book page and chose the best
   volume by setting the nsfr_id, and restarting cal-noosfere metadata source plugin.
-3 Cal-noosfere does allow for overloading the publisher field with the collection and
-  the index of the collection. It, then,  becomes necessary to split this info in custom
-  columns.
-  
+3 Cal-noosfere does not allow modifying customized column, but allosw overloading the 
+  publisher field with the collection and the index of the collection. 
+  It, then, becomes necessary to split this info in custom columns.
+
 Intentions:
 1 Provide some pre-processing by wiping out some fields, set nsfr_id to the new desired volume.
 2 Provide some post-processing by splitting and setting the information where it needs to go.
@@ -30,4 +31,10 @@ understood... anyway, it is still fun for a hobby :-)... I do think sometimes th
 programming or assembler is easier... )
 
 Spawned process seems to work fine for both data in and data out...
+
+Added a class to allow for a search bar that could be hidden when  not in use... This implied 
+creating a signal... that makes calibre to crash before control is passed to remote main...
+I guess I hit a bug or some undocumented restriction...
+
+Added some code to fill the noosfere form (was a lot easier than expected)
 

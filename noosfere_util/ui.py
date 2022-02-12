@@ -12,6 +12,7 @@ if False:
 
 # The class that all interface action plugins must inherit from
 from calibre.gui2.actions import InterfaceAction
+from calibre_plugins.noosfere_util.main import NoosfereUtilDialog
 from PyQt5.Qt import QInputDialog
 from PyQt5.QtWidgets import QApplication
 from time import sleep
@@ -55,55 +56,77 @@ class InterfacePlugin(InterfaceAction):
         self.qaction.triggered.connect(self.show_dialog)
 
     def show_dialog(self):
+        # The base plugin object defined in __init__.py
+        base_plugin_object = self.interface_action_base_plugin
+        # Show the config dialog
+        # The config dialog can also be shown from within
+        # Preferences->Plugins, which is why the do_user_config
+        # method is defined on the base plugin class
+        do_user_config = base_plugin_object.do_user_config
 
-        # Ask the user for a URL
-        #url, ok = QInputDialog.getText(self.gui, 'Enter a URL', 'Enter a URL to browse below', text='https://www.noosfere.org/livres/editionslivre.asp?numitem=7385 ')
-        #if not ok or not url:
-        #   return
-        # set url, isbn, auteurs and titre
-        url="https://www.noosfere.org/livres/noosearch.asp"
-        isbn = "2266027646"
-        auteurs = "Philip José Farmer"
-        titre = "L'Odyssée verte"
-        data = [url, isbn, auteurs, titre]
+        # self.gui is the main calibre GUI. It acts as the gateway to access
+        # all the elements of the calibre user interface, it should also be the
+        # parent of the dialog
+        d = NoosfereUtilDialog(self.gui, self.qaction.icon(), do_user_config)
+        d.show()
 
-        # remove all trace of an old synchronization file between calibre and the outside process running QWebEngineView
-        for i in glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):
-            os.remove(i)
-
-        # initialize clipboard so no old data will pollute results
-        cb = QApplication.clipboard()
-        cb.clear(mode=cb.Clipboard)
-
-        # Launch a separate process to view the URL in WebEngine
-        self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.noosfere_util.web_main', 'data':data})
-        # WARNING: "webengine-dialog" is a defined function in calibre\src\calibre\utils\ipc\worker.py ...DO NOT CHANGE...
-
-        # sleep some like 5 seconds to wait for web_main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
-        # according to the tempfile doc, this temp file MAY be system wide... CARE if more than ONE user runs calibre
-        sleep(5)                # so there is time enough to create atemp file with sync-cal-qweb prefix
-        while glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):         # wait till file is removed
-            sleep(.2)           # loop fast enough for a user to feel the operation instantaneous
-
-        # synch file is gone, meaning QWebEngineView process is closed so, we can collect the result in the system clipboard
-        print("webengine-dialog process submitted")
-#        cb = QApplication.clipboard()
-        print(cb.text(mode=cb.Clipboard))
-        choosen_url = cb.text(mode=cb.Clipboard)
-        cb.clear(mode=cb.Clipboard)
-
-        if choosen_url:
-            print('choosen_url from clipboard',choosen_url, "type(choosen_url)", type(choosen_url))
-        else:
-            print('no change will take place...')
-
-        return
+    def apply_settings(self):
+        from calibre_plugins.noosfere_util.config import prefs
+        # In an actual non trivial plugin, you would probably need to
+        # do something based on the settings in prefs
+        prefs
 
 
-#     def launch_gui_app(self, name, args=(), kwargs=None, description=''):
-#         job = ParallelJob(name, description, lambda x: x,
-#                 args=list(args), kwargs=kwargs or {})
-#         self.serverserver.run_job(job, gui=True, redirect_output=False)
-#
-# from jobs.py in gui2 in calibre in src...
-#
+##def show_dialog(self):
+##
+##        # Ask the user for a URL
+##        #url, ok = QInputDialog.getText(self.gui, 'Enter a URL', 'Enter a URL to browse below', text='https://www.noosfere.org/livres/editionslivre.asp?numitem=7385 ')
+##        #if not ok or not url:
+##        #   return
+##        # set url, isbn, auteurs and titre
+##        book_id = ""
+##        isbn = "2266027646"
+##        auteurs = "Philip José Farmer"
+##        titre = "L'Odyssée verte"
+##        data = [book_id, isbn, auteurs, titre]
+##
+##        # remove all trace of an old synchronization file between calibre and the outside process running QWebEngineView
+##        for i in glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):
+##            os.remove(i)
+##
+##        # initialize clipboard so no old data will pollute results
+##        cb = QApplication.clipboard()
+##        cb.clear(mode=cb.Clipboard)
+##
+##        # Launch a separate process to view the URL in WebEngine
+##        self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.noosfere_util.web_main', 'data':data})
+##        # WARNING: "webengine-dialog" is a defined function in calibre\src\calibre\utils\ipc\worker.py ...DO NOT CHANGE...
+##
+##        # sleep some like 5 seconds to wait for web_main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
+##        # according to the tempfile doc, this temp file MAY be system wide... CARE if more than ONE user runs calibre
+##        sleep(5)                # so there is time enough to create atemp file with sync-cal-qweb prefix
+##        while glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):         # wait till file is removed
+##            sleep(.2)           # loop fast enough for a user to feel the operation instantaneous
+##
+##        # synch file is gone, meaning QWebEngineView process is closed so, we can collect the result in the system clipboard
+##        print("webengine-dialog process submitted")
+###        cb = QApplication.clipboard()
+##        print(cb.text(mode=cb.Clipboard))
+##        choosen_url = cb.text(mode=cb.Clipboard)
+##        cb.clear(mode=cb.Clipboard)
+##
+##        if choosen_url:
+##            print('choosen_url from clipboard',choosen_url, "type(choosen_url)", type(choosen_url))
+##        else:
+##            print('no change will take place...')
+##
+##        return
+##
+##
+###     def launch_gui_app(self, name, args=(), kwargs=None, description=''):
+###         job = ParallelJob(name, description, lambda x: x,
+###                 args=list(args), kwargs=kwargs or {})
+###         self.serverserver.run_job(job, gui=True, redirect_output=False)
+###
+### from jobs.py in gui2 in calibre in src...
+###

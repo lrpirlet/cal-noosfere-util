@@ -11,6 +11,7 @@ if False:
     get_icons = get_resources = None
 
 from PyQt5.Qt import QDialog, QVBoxLayout, QPushButton, QMessageBox, QLabel
+from pkg_resources import FileMetadata
 
 from calibre_plugins.noosfere_util.config import prefs
 
@@ -55,6 +56,11 @@ class NoosfereUtilDialog(QDialog):
         self.update_metadata_button = QPushButton(
             'Update metadata in a book\'s files', self)
         self.update_metadata_button.clicked.connect(self.update_metadata)
+        self.l.addWidget(self.update_metadata_button)
+
+        self.update_metadata_button = QPushButton(
+            'noosfere_selected', self)
+        self.update_metadata_button.clicked.connect(self.noosfere_selected)
         self.l.addWidget(self.update_metadata_button)
 
         self.conf_button = QPushButton(
@@ -151,36 +157,75 @@ class NoosfereUtilDialog(QDialog):
         Set the metadata in the files in the selected book's record to
         match the current metadata in the database.
         '''
+        #from calibre.library import db
         from calibre.ebooks.metadata.meta import set_metadata
         from calibre.gui2 import error_dialog, info_dialog
+        from calibre import prints
+
+        prints("Entering noosfere_selected")
 
         # Get currently selected books
         rows = self.gui.library_view.selectionModel().selectedRows()
+        # prints("rows type : ", type(rows), "rows", rows) rows are selected rows in calibre
         if not rows or len(rows) == 0:
             return error_dialog(self.gui, 'Cannot update metadata',
                              'No books selected', show=True)
         # Map the rows to book ids
         ids = list(map(self.gui.library_view.model().id, rows))
+        prints("ids : ", ids)
         db = self.db.new_api
         for book_id in ids:
             # Get the current metadata for this book from the db
             mi = db.get_metadata(book_id, get_cover=True, cover_as_data=True)
             fmts = db.formats(book_id)
-            if not fmts:
-                continue
-            for fmt in fmts:
-                fmt = fmt.lower()
-                # Get a python file object for the format. This will be either
-                # an in memory file or a temporary on disk file
-                ffile = db.format(book_id, fmt, as_file=True)
-                ffile.seek(0)
-                # Set metadata in the format
-                set_metadata(ffile, mi, fmt)
-                ffile.seek(0)
-                # Now replace the file in the calibre library with the updated
-                # file. We dont use add_format_with_hooks as the hooks were
-                # already run when the file was first added to calibre.
-                db.add_format(book_id, fmt, ffile, run_hooks=False)
+            prints("fmts = db.formats(book_id)", fmts)
+            prints(20*"*.")
+            prints("book_id             : ", book_id)
+            prints("mi.title       *    : ", mi.title)
+            prints("mi.authors     *    : ", mi.authors)
+            prints("mi.publisher   --   : ", mi.publisher)
+            prints("mi.pubdate          : ", mi.pubdate)
+            prints("mi.uuid             : ", mi.uuid)
+            prints("mi.languages        : ", mi.languages)
+            prints("mi.tags        --   : ", mi.tags)
+            prints("mi.series      --   : ", mi.series)
+            prints("mi.rating      --   : ", mi.rating)
+            prints("mi.application_id   : ", mi.application_id)
+            prints("mi.id               : ", mi.id)
+            prints("mi.user_categories  : ", mi.user_categories)
+            prints("mi.identifiers      : ", mi.identifiers)
+
+            for key in mi.custom_field_keys():
+                prints("custom_field_keys   : ", key)
+            prints(20*"#²")
+
+            for key in mi.custom_field_keys():
+                #prints("custom_field_keys   : ", key)
+                display_name, val, oldval, fm = mi.format_field_extended(key)
+                #prints("display_name=%s, val=%s, oldval=%s, ff=%s" % (display_name, val, oldval, fm))
+                if fm and fm['datatype'] != 'composite':
+                    prints("custom_field_keys not composite : ", key)
+                    prints("display_name=%s, val=%s, oldval=%s, ff=%s" % (display_name, val, oldval, fm))
+                    prints(20*"..")
+                if "coll_srl" in display_name : cstm_coll_srl_fm=fm
+                if "collection" in display_name : cstm_collection_fm=fm
+
+            prints(20*"+-")
+            prints("#collection         : ", db.field_for('#collection', book_id))
+
+            mi.publisher=""
+            mi.series=""
+            mi.language=""
+            mi.set_identifier('nsfr_id', "")
+
+            cstm_coll_srl_fm["#value#"] = ""
+            mi.set_user_metadata("#coll_srl",cstm_coll_srl_fm)
+
+            cstm_collection_fm["#value#"] = ""
+            mi.set_user_metadata("#collection",cstm_collection_fm)
+
+            db.set_metadata(book_id, mi, force_changes=True)
+
 
         info_dialog(self, 'Updated files',
                 'Updated the metadata in the files of %d book(s)'%len(ids),

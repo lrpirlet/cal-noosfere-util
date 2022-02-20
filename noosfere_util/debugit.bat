@@ -4,4 +4,6 @@ rem this will kill any running calibre, push a new plugin.zip where appropriate 
 
 calibre-debug -s
 calibre-customize -b .
-calibre-debug --gui
+rem START calibre-debug --gui  creates a new cmd windows that executes calibre-debug --gui 
+rem this allows killing a running calibre without fumbling all over the places on my too small monitor...
+START calibre-debug --gui

@@ -4,11 +4,11 @@
 __license__   = 'GPL v3'
 __copyright__ = '2021, Louis Richard Pirlet'
 
-if False:
-    # This is here to keep my python error checker from complaining about
-    # the builtin functions that will be defined by the plugin loading system
-    # You do not need this code in your plugins
-    get_icons = get_resources = None
+# if False:
+#     # This is here to keep my python error checker from complaining about
+#     # the builtin functions that will be defined by the plugin loading system
+#     # You do not need this code in your plugins
+#     get_icons = get_resources = None
 
 # The class that all interface action plugins must inherit from
 from calibre import prints
@@ -23,7 +23,7 @@ from calibre_plugins.noosfere_util.main import NoosfereUtilDialog
 #from calibre_plugins.noosfere_util.common_utils import (create_menu_action_unique)
 
 from PyQt5.Qt import QInputDialog
-from PyQt5.QtWidgets import QToolButton, QMenu
+from PyQt5.QtWidgets import QToolButton, QMenu, QMessageBox
 from PyQt5.QtCore import qDebug, QUrl
 from time import sleep
 
@@ -33,6 +33,14 @@ import os
 
 #from multiprocessing import Queue
 # https://docs.python.org/fr/3/library/multiprocessing.html?highlight=queue#multiprocessing.Queue
+
+# extracted from common_utils.py, found in many plugin,s ... header as follow:
+# __license__   = 'GPL v3'
+# __copyright__ = '2011, Grant Drake <grant.drake@gmail.com>
+# __docformat__ = 'restructuredtext en'
+# only change is the use of get_icons instead of get_icon in:
+#    ac.setIcon(get_icons(image))
+# I like blue icons :-)
 
 def create_menu_action_unique(ia, parent_menu, menu_text, image=None, tooltip=None,
                        shortcut=None, triggered=None, is_checked=None, shortcut_name=None,
@@ -71,12 +79,6 @@ def create_menu_action_unique(ia, parent_menu, menu_text, image=None, tooltip=No
         ac.setCheckable(True)
         if is_checked:
             ac.setChecked(True)
-    # For use by the Favourites Menu plugin. If this menu action has text
-    # that is not constant through the life of this plugin, then we need
-    # to attribute it with something that will be constant that the
-    # Favourites Menu plugin can use to identify it.
-    if favourites_menu_unique_name:
-        ac.favourites_menu_unique_name = favourites_menu_unique_name
     return ac
     
 class InterfacePlugin(InterfaceAction):
@@ -151,14 +153,17 @@ class InterfacePlugin(InterfaceAction):
 
         self.menu.addSeparator()
 
-        create_menu_action_unique(self, self.menu, _('&Customize plugin')+'...', 'blue_icon/config.png',
+        create_menu_action_unique(self, self.menu, _('Customize plugin')+'...', 'blue_icon/config.png',
                                   triggered=self.show_configuration)
 
         self.menu.addSeparator()
 
         #self.advanced_help_action = 
-        create_menu_action_unique(self, self.menu, _('&Help'), 'blue_icon/documentation.png',
+        create_menu_action_unique(self, self.menu, _('Help'), 'blue_icon/documentation.png',
                                   triggered=self.show_help)
+
+        create_menu_action_unique(self, self.menu, _('About'), 'blue_icon/documentation.png',
+                                  triggered=self.about)
 
         self.gui.keyboard.finalize()
 
@@ -177,40 +182,40 @@ class InterfacePlugin(InterfaceAction):
     def show_configuration(self):
         self.interface_action_base_plugin.do_user_config(self.gui)
 
-    # def show_help(self):
-    #     url = 'https://www.mobileread.com/forums/showpost.php?p=4142902&postcount=1'
-    #     open_url(QUrl(url))
     def show_help(self):
-    # def show_help(self, anchor=None):
-        # debug_print("show_help - anchor=", anchor)
-
-        def get_help_file_resource():
-            # Extract on demand the help file resource
-            # The help file is written out every time, in case the user upgrades the plugin zip
-            # and there is a later help file contained within it.
-            # from calibre.utils.localization import get_lang
-            # lang = get_lang()
-            #HELP_FILE = 'KoboUtilities_Help_en.html'
-            HELP_FILE = "doc.html"
-            # if lang == 'fr':
-            #     HELP_FILE = 'KoboUtilities_Help_fr.html'
-            file_path = os.path.join(config_dir, 'plugins', HELP_FILE)
-            file_data = self.load_resources('doc/' + HELP_FILE)['doc/' + HELP_FILE]
-            if DEBUG: prints('show_help - file_path:', file_path)
-            # debug_print('show_help - file_path:', file_path)
-#             if DEBUG: prints('show_help - file_data:', file_data)
-#             debug_print('show_help - file_data:', file_data)
-            with open(file_path,'wb') as f:
-                f.write(file_data)
-            return file_path
-
-        # debug_print("show_help - anchor=", anchor)
-        url = 'file:///' + get_help_file_resource()
+        text = get_resources("doc/doc.html").decode("utf-8")
+        url = text
         url = QUrl(url)
-        # if anchor is not None and not anchor == '':
-        #     prints(str(type(anchor)))
-        #     url.setFragment(anchor)
         open_url(url)
+
+#    def show_help(self):
+#         def get_help_file_resource():
+#             # Extract on demand the help file resource
+#             # The help file is written out every time, in case the user upgrades the plugin zip
+#             # and there is a later help file contained within it.
+#             # from calibre.utils.localization import get_lang
+#             # lang = get_lang()
+#             #HELP_FILE = 'KoboUtilities_Help_en.html'
+#             HELP_FILE = "doc.html"
+#             # if lang == 'fr':
+#             #     HELP_FILE = 'KoboUtilities_Help_fr.html'
+#             file_path = os.path.join(config_dir, 'plugins', HELP_FILE)
+#             file_data = self.load_resources('doc/' + HELP_FILE)['doc/' + HELP_FILE]
+#             if DEBUG: prints('show_help - file_path:', file_path)
+#             # debug_print('show_help - file_path:', file_path)
+# #             if DEBUG: prints('show_help - file_data:', file_data)
+# #             debug_print('show_help - file_data:', file_data)
+#             with open(file_path,'wb') as f:
+#                 f.write(file_data)
+#             return file_path
+#         url = 'file:///' + get_help_file_resource()
+#         url = QUrl(url)
+#         open_url(url)
+
+    def about(self):
+        text = get_resources("doc/about.txt")
+        QMessageBox.about(self.gui, 'About the Interface Plugin Demo',
+                text.decode('utf-8'))
 
     def apply_settings(self):
         from calibre_plugins.noosfere_util.config import prefs
@@ -293,19 +298,19 @@ class InterfacePlugin(InterfaceAction):
 
 #         self.resize(self.sizeHint())
 
-#     def about(self):
-#         # Get the about text from a file inside the plugin zip file
-#         # The get_resources function is a builtin function defined for all your
-#         # plugin code. It loads files from the plugin zip file. It returns
-#         # the bytes from the specified file.
-#         #
-#         # Note that if you are loading more than one file, for performance, you
-#         # should pass a list of names to get_resources. In this case,
-#         # get_resources will return a dictionary mapping names to bytes. Names that
-#         # are not found in the zip file will not be in the returned dictionary.
-#         text = get_resources('about.txt')
-#         QMessageBox.about(self, 'About the Interface Plugin Demo',
-#                 text.decode('utf-8'))
+    def about(self):
+        # Get the about text from a file inside the plugin zip file
+        # The get_resources function is a builtin function defined for all your
+        # plugin code. It loads files from the plugin zip file. It returns
+        # the bytes from the specified file.
+        #
+        # Note that if you are loading more than one file, for performance, you
+        # should pass a list of names to get_resources. In this case,
+        # get_resources will return a dictionary mapping names to bytes. Names that
+        # are not found in the zip file will not be in the returned dictionary.
+        text = get_resources("doc/about.txt")
+        QMessageBox.about(self.gui, 'About the Interface Plugin Demo',
+                text.decode('utf-8'))
 
 #     def marked(self):
 #         ''' Show books with only one format '''

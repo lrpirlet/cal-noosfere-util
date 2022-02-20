@@ -12,6 +12,15 @@ from PyQt5.QtGui import QIcon, QKeySequence
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 from json import dumps
 
+# faut voir le suivant....
+# 1 utiliser confirm() ???
+#from calibre.gui2.dialogs.confirm_delete import confirm
+#    def delete_user_categories(self):
+#        if not confirm(
+#            _('All user categories will be deleted. Are you sure you want to proceed?'),
+#            'category_tags_delete_all_categories'):
+#            return
+# 2 QApplication ou Application ???
 #from calibre.gui2 import Application
 import tempfile
 import os
@@ -292,7 +301,7 @@ def main(data):
 
     # Initialize environment..
 
-    # create a temp file... while it exists ui.py will wait... this file will disappear with the process
+    # create a temp file... while it exists action.py will wait... this file will disappear with the process
     tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb")
     # tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb",mode='w+',buffering=1, delete=False)
     # tfp.write(str(type(data))+"\n")
@@ -314,5 +323,5 @@ def main(data):
     app.exec()
     #sys.exit(app.exec())
 
-    # signal ui.py that we are finished
+    # signal action.py that we are finished
     tfp.close           # close temp file

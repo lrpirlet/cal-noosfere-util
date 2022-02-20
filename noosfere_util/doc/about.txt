@@ -1,23 +1,23 @@
 The noosfere utilité plugin
 ===========================
 
-This plugin should complement cal-noosfere.
+This plugin should complement noosfere DB, a metadata download plugin.
 
 Issues in cal-noosfere:
-1 Cal-noosfere CANNOT wipe out a new metadata empty field
- example: if a previous metadata source download, from anywhere,
- did set the series to "something", and noosfere metadata source finds
- NO series, then calibre will NOT wipe out the series field.
+1 noosfere DB CANNOT wipe out a new metadata empty field
+ example: if any previous metadata download plugin did set the series
+ to "something", when noosfere metadata source finds  NO series, then
+ calibre will NOT wipe out the series field. (expected behaviour!)
 
 2 A book may exist under several volumes... Each may differ because
- of a re-edition by the same or by a different editor... it may even
- be part of one or several anthology with possibly a different author
- and/or title and/or ISBN. I made some choice but this  may NOT be
- the best fit. Solution is to manually go to the book page and choose
- the best volume by setting the nsfr_id, and restarting cal-noosfere
- metadata source plugin.
+ of a re-edition by the same or by a different editor... It may even
+ be part of one or several anthology with possibly a different author'
+ name and/or title and/or ISBN. 
+ I made some choice but that may NOT be the best fit. Solution is to
+ manually go to the book page, choose the best volume by setting
+ the nsfr_id and restart the noosfere DB metadata source plugin.
 
-3 Cal-noosfere does not allow modifying customized column, but allows
+3 noosfere DB does not allow modifying customized column, but allows
  overloading the publisher field with the collection and the index of
  the collection.
  It, then, becomes necessary to split this info in custom columns.

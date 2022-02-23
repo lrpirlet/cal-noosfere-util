@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
     def __init__(self, data):
         super().__init__()
 
-        # data = [book_id, isbn, auteurs, titre]
+        # data = [url, isbn, auteurs, titre]
         self.isbn, self.auteurs, self.titre = data[1].replace("-",""), data[2], data[3]
 
         self.cb = QApplication.clipboard()
@@ -308,10 +308,10 @@ def main(data):
     # tfp.write("data : "+str(data)+"\n")
 
     # retrieve component from data
-    #        data = [book_id, isbn, auteurs, titre]
-    book_id, isbn, auteurs, titre = data[0], data[1], data[2], data[3]
+    #        data = [url, isbn, auteurs, titre]
+    url = data[0]
 
-    # tfp.write("book_id : "+book_id+"\n")
+    # tfp.write("url     : "+url+"\n")
     # tfp.write("isbn    : "+isbn+"\n")
     # tfp.write("auteurs : "+auteurs+"\n")
     # tfp.write("titre   : "+titre+"\n")
@@ -319,9 +319,20 @@ def main(data):
     # Start QWebEngineView and associated widgets
     app = QApplication([])
     window = MainWindow(data)
-    window.initial_url("https://www.noosfere.org/livres/noosearch.asp")     # jump directly to noosfere advanced search page
+    window.initial_url("https://www.noosfere.org/livres/noosearch.asp")
     app.exec()
     #sys.exit(app.exec())
 
     # signal action.py that we are finished
     tfp.close           # close temp file
+
+if __name__ == '__main__':
+        url = "https://www.noosfere.org/livres/noosearch.asp"     # jump directly to noosfere advanced search page
+        isbn = "2266027646"
+        auteurs = "désolé michel"
+        titre = "un mauvais titre"
+        data = [url, isbn, auteurs, titre]
+
+        main(data)
+ 
+

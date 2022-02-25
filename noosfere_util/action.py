@@ -53,7 +53,7 @@ def create_menu_action_unique(ia, parent_menu, menu_text, image=None, tooltip=No
     # change to notice is the use of get_icons instead of get_icon in:
     #    ac.setIcon(get_icons(image))
     # I like blue icons :-)... ok, to be honest I could make this one work... I had lots of
-    # difficulties with the many common_utils.py files that have the same name 
+    # difficulties with the many common_utils.py files that have the same name
     # but different content...
 
     orig_shortcut = shortcut
@@ -86,7 +86,7 @@ def create_menu_action_unique(ia, parent_menu, menu_text, image=None, tooltip=No
         if is_checked:
             ac.setChecked(True)
     return ac
-    
+
 class InterfacePlugin(InterfaceAction):
 
     name = 'noosfere utilités'
@@ -157,7 +157,7 @@ class InterfacePlugin(InterfaceAction):
 
         self.menu.addSeparator()
 
-        #self.advanced_help_action = 
+        #self.advanced_help_action =
         create_menu_action_unique(self, self.menu, _('Help'), 'blue_icon/documentation.png',
                                   triggered=self.show_help)
 
@@ -185,7 +185,7 @@ class InterfacePlugin(InterfaceAction):
         ids = list(map(self.gui.library_view.model().id, rows))
         if DEBUG : prints("ids : ", ids)
 
-        for book_id in ids: 
+        for book_id in ids:
             self.select_one_volume(book_id)
 
         if DEBUG: prints('Updated the metadata in the files of %d book(s)'%len(ids))
@@ -201,7 +201,7 @@ class InterfacePlugin(InterfaceAction):
         set the nsfr_id, remove the ISBN (?fire a metadata download?)
         '''
         if DEBUG: prints("in commented-select_one_volume")
-        
+
         db = self.gui.current_db.new_api
         mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
         # fmts = db.formats(book_id)
@@ -227,11 +227,17 @@ class InterfacePlugin(InterfaceAction):
         #if not ok or not url:
         #   return
         # set url, isbn, auteurs and titre
+        url=isbn=auteurs=titre=""               # must all be empty string to start with
         url = "https://www.noosfere.org/livres/noosearch.asp"     # jump directly to noosfere advanced search page
-        isbn = "2266027646"
-        auteurs = mi.authors
+        isbn = mi.get_identifiers()["isbn"]
+        auteurs = " & ".join(mi.authors)
         titre = mi.title
         data = [url, isbn, auteurs, titre]
+        if DEBUG:
+            prints(" url is a string : ", isinstance(url, str))
+            prints(" isbn is a string : ", isinstance(isbn, str))
+            prints(" auteurs is a string : ", isinstance(auteurs, str))
+            prints(" titre is a string : ", isinstance(titre, str))
         prints(data)
 
         # remove all trace of an old synchronization file between calibre and the outside process running QWebEngineView
@@ -268,7 +274,7 @@ class InterfacePlugin(InterfaceAction):
         '''
         for this book_id
         Deletes publisher, tags, series, rating, #coll_srl, #collection, and any ID
-        except ISBN. All other fields are supposed to be overwritten when new matadata 
+        except ISBN. All other fields are supposed to be overwritten when new matadata
         is downloaded from noosfere. ISBN will be wiped when nsfr_id is written later.
         '''
         db = self.gui.current_db.new_api
@@ -300,7 +306,7 @@ class InterfacePlugin(InterfaceAction):
             #prints("custom_field_keys   : ", key)
             display_name, val, oldval, fm = mi.format_field_extended(key)
             #prints("display_name=%s, val=%s, oldval=%s, ff=%s" % (display_name, val, oldval, fm))
-    #        if fm and fm['datatype'] != 'composite': 
+    #        if fm and fm['datatype'] != 'composite':
     #             prints("custom_field_keys not composite : ", key)
     #             prints("display_name=%s, val=%s, oldval=%s, ff=%s" % (display_name, val, oldval, fm))
     #             prints(20*"..")
@@ -329,7 +335,7 @@ class InterfacePlugin(InterfaceAction):
         '''
         For all selected book
         Deletes publisher, tags, series, rating, #coll_srl, #collection, and any ID
-        except ISBN. All other fields are supposed to be overwritten when new matadata 
+        except ISBN. All other fields are supposed to be overwritten when new matadata
         is downloaded from noosfere. ISBN will be wiped when nsfr_id is written later.
         '''
         if DEBUG: prints("in commented-wipe_metadata")
@@ -343,7 +349,7 @@ class InterfacePlugin(InterfaceAction):
         ids = list(map(self.gui.library_view.model().id, rows))
         if DEBUG : prints("ids : ", ids)
 
-        for book_id in ids: 
+        for book_id in ids:
             self.wipe_one_metadata(book_id)
 
         if DEBUG: prints('Updated the metadata in the files of %d book(s)'%len(ids))

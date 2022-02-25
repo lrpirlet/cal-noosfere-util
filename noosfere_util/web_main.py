@@ -5,9 +5,9 @@ __license__   = 'GPL v3'
 __copyright__ = '2021, Louis Richard Pirlet'
 
 from PyQt5.QtCore import pyqtSlot, qDebug, QUrl, QSize
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QToolBar, QAction, QLineEdit,
+from PyQt5.QtWidgets import (QMainWindow, QToolBar, QAction, QLineEdit,
                                 QStatusBar, QMessageBox, qApp, QWidget, QVBoxLayout,
-                                QHBoxLayout, QPushButton, QShortcut)
+                                QHBoxLayout, QPushButton, QShortcut)  #, QApplication)
 from PyQt5.QtGui import QIcon, QKeySequence
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 from json import dumps
@@ -21,10 +21,30 @@ from json import dumps
 #            'category_tags_delete_all_categories'):
 #            return
 # 2 QApplication ou Application ???
-#from calibre.gui2 import Application
+from calibre.gui2 import Application
 import tempfile
 import os
 import sys
+
+import logging
+
+class StreamToLogger(object):
+    """
+    Fake file-like stream object that redirects writes to a logger instance.
+    This will help when the web browser in web_main does not show
+    """
+    def __init__(self, logger, log_level=logging.INFO):
+      self.logger = logger
+      self.log_level = log_level
+      self.linebuf = ''
+
+    def write(self, buf):
+      for line in buf.rstrip().splitlines():
+         self.logger.log(self.log_level, line.rstrip())
+
+    def flush(self):
+        for handler in self.logger.handlers:
+            handler.flush()
 
 class MainWindow(QMainWindow):
     """
@@ -40,7 +60,7 @@ class MainWindow(QMainWindow):
         # data = [url, isbn, auteurs, titre]
         self.isbn, self.auteurs, self.titre = data[1].replace("-",""), data[2], data[3]
 
-        self.cb = QApplication.clipboard()
+        self.cb = Application.clipboard()
 
   # browser
         self.browser = QWebEngineView()
@@ -300,8 +320,23 @@ class MainWindow(QMainWindow):
 def main(data):
 
     # Initialize environment..
+    # note: web_main is NOT supposed to output anything over STDOUT or
 
-    # create a temp file... while it exists action.py will wait... this file will disappear with the process
+    logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
+    filename="web_main-out.log",
+    filemode='a')
+
+    stdout_logger = logging.getLogger('STDOUT')
+    sl = StreamToLogger(stdout_logger, logging.INFO)
+    sys.stdout = sl
+
+    stderr_logger = logging.getLogger('STDERR')
+    sl = StreamToLogger(stderr_logger, logging.ERROR)
+    sys.stderr = sl
+
+    # create a temp file... while it exists launcher program will wait... this file will disappear with the process
     tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb")
     # tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb",mode='w+',buffering=1, delete=False)
     # tfp.write(str(type(data))+"\n")
@@ -309,30 +344,23 @@ def main(data):
 
     # retrieve component from data
     #        data = [url, isbn, auteurs, titre]
-    url = data[0]
-
-    # tfp.write("url     : "+url+"\n")
-    # tfp.write("isbn    : "+isbn+"\n")
-    # tfp.write("auteurs : "+auteurs+"\n")
-    # tfp.write("titre   : "+titre+"\n")
+    url, isbn, auteurs, titre = data[0], data[1], data[2], data[3],
 
     # Start QWebEngineView and associated widgets
-    app = QApplication([])
+    app = Application([])
     window = MainWindow(data)
-    window.initial_url("https://www.noosfere.org/livres/noosearch.asp")
+    window.initial_url(url)     # supposed to be noosfere advanced search page, fixed by launcher program
     app.exec()
-    #sys.exit(app.exec())
 
-    # signal action.py that we are finished
+    # signal launcher program that we are finished
     tfp.close           # close temp file
 
+
 if __name__ == '__main__':
-        url = "https://www.noosfere.org/livres/noosearch.asp"     # jump directly to noosfere advanced search page
-        isbn = "2266027646"
-        auteurs = "désolé michel"
-        titre = "un mauvais titre"
-        data = [url, isbn, auteurs, titre]
+    url = "https://www.noosfere.org/livres/noosearch.asp"   # jump directly to noosfere advanced search page
+    isbn = "2266027646"
+    auteurs = "désolé michel"                               # forget not that auteurs may be a list of auteurs
+    titre = "un mauvais titre"
+    data = [url, isbn, auteurs, titre]
 
-        main(data)
- 
-
+    main(data)

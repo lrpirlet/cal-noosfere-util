@@ -1,6 +1,7 @@
 # stop any debug/development files to be uploaded
 junk/*
 .vscode/*
+todo.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

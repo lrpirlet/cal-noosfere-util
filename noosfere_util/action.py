@@ -33,7 +33,6 @@ import glob
 import os
 
 #         from calibre.gui2 import error_dialog, info_dialog
-#         from calibre import prints
 
 def create_menu_action_unique(ia, parent_menu, menu_text, image=None, tooltip=None,
                        shortcut=None, triggered=None, is_checked=None, shortcut_name=None,
@@ -143,7 +142,7 @@ class InterfacePlugin(InterfaceAction):
                                   triggered=self.wipe_selected_metadata)
 
         create_menu_action_unique(self, self.menu, _('Choix du volume'), 'blue_icon/choice.png',
-                                  triggered=self.select_volume)
+                                  triggered=self.run_web_main)
 
         self.menu.addSeparator()
 
@@ -169,7 +168,7 @@ class InterfacePlugin(InterfaceAction):
         # Assign our menu to this action and an icon, also add dropdown menu
         self.qaction.setMenu(self.menu)
 
-    def select_volume(self):
+    def run_web_main(self):
         '''
         For the selected books:
         wipe metadata, launch a web-browser to select the desired volumes,
@@ -186,7 +185,7 @@ class InterfacePlugin(InterfaceAction):
         if DEBUG : prints("ids : ", ids)
 
         for book_id in ids:
-            self.select_one_volume(book_id)
+            self.run_one_web_main(book_id)
 
         if DEBUG: prints('Updated the metadata in the files of %d book(s)'%len(ids))
 
@@ -194,13 +193,13 @@ class InterfacePlugin(InterfaceAction):
                 'Les metadonées ont été préparées pour %d livre(s)'%len(ids),
                 show=True)
 
-    def select_one_volume(self, book_id):
+    def run_one_web_main(self, book_id):
         '''
         For the books_id:
         wipe metadata, launch a web-browser to select the desired volumes,
         set the nsfr_id, remove the ISBN (?fire a metadata download?)
         '''
-        if DEBUG: prints("in commented-select_one_volume")
+        if DEBUG: prints("in commented-run_one_web_main")
 
         db = self.gui.current_db.new_api
         mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
@@ -226,8 +225,8 @@ class InterfacePlugin(InterfaceAction):
         #url, ok = QInputDialog.getText(self.gui, 'Enter a URL', 'Enter a URL to browse below', text='https://www.noosfere.org/livres/editionslivre.asp?numitem=7385 ')
         #if not ok or not url:
         #   return
+
         # set url, isbn, auteurs and titre
-        url=isbn=auteurs=titre=""               # must all be empty string to start with
         url = "https://www.noosfere.org/livres/noosearch.asp"     # jump directly to noosfere advanced search page
         isbn = mi.get_identifiers()["isbn"]
         auteurs = " & ".join(mi.authors)
@@ -238,11 +237,12 @@ class InterfacePlugin(InterfaceAction):
             prints(" isbn is a string : ", isinstance(isbn, str))
             prints(" auteurs is a string : ", isinstance(auteurs, str))
             prints(" titre is a string : ", isinstance(titre, str))
-        prints(data)
-
+  
         # remove all trace of an old synchronization file between calibre and the outside process running QWebEngineView
         for i in glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):
             os.remove(i)
+        # remove previous log files for web_main process in the temp dir
+        os.remove(os.path.join(tempfile.gettempdir(), 'nsfr_utl-web_main.log'))
 
         # initialize then clear clipboard so no old data will pollute results
         cb = QApplication.clipboard()
@@ -250,26 +250,38 @@ class InterfacePlugin(InterfaceAction):
 
         # Launch a separate process to view the URL in WebEngine
         self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.noosfere_util.web_main', 'data':data})
+        if DEBUG: prints("webengine-dialog process submitted")
         # WARNING: "webengine-dialog" is a defined function in calibre\src\calibre\utils\ipc\worker.py ...DO NOT CHANGE...
 
         # sleep some like 5 seconds to wait for web_main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
-        # according to the tempfile doc, this temp file MAY be system wide... CARE if more than ONE user runs calibre
-        sleep(5)                # so there is time enough to create atemp file with sync-cal-qweb prefix
-        while glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):         # wait till file is removed
+        # make sure that main loop is NOT responding while QWebEngineView is running.
+        # That could result in hang... I am NOT looking for control-c...
+        # that should raise attention AND trigger looking into temp dir for nsfr_utl-web_main.log 
+        sleep(5)
+        
+        # wait till file is removed but loop fast enough for a user to feel the operation instantaneous
+        while glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):
             sleep(.2)           # loop fast enough for a user to feel the operation instantaneous
 
         # synch file is gone, meaning QWebEngineView process is closed so, we can collect the result in the system clipboard
-        print("webengine-dialog process submitted")
-#        cb = QApplication.clipboard()
-        print(cb.text(mode=cb.Clipboard))
         choosen_url = cb.text(mode=cb.Clipboard)
+        if DEBUG: prints("choosen_url", choosen_url)
         cb.clear(mode=cb.Clipboard)
 
-        if choosen_url:
-            print('choosen_url from clipboard',choosen_url, "type(choosen_url)", type(choosen_url))
+        if "numlivre=" in choosen_url:
+            prints('choosen_url from clipboard',choosen_url)
+            nsfr_id = "vl$"+choosen_url.split("numlivre=")[1]
+            prints("nsfr_id : ", nsfr_id)
         else:
-            print('no change will take place...')
-
+            prints('no change will take place...')
+            # mark books that have been bypassed...
+            # new_api does not know anything about marked books, so we use the full
+            # db object
+            self.gui.current_db.set_marked_ids(book_id)
+            # Tell the GUI to search for all marked records
+            self.gui.search.setEditText('marked:true')
+            self.gui.search.do_search()
+            
     def wipe_one_metadata(self,book_id):
         '''
         for this book_id

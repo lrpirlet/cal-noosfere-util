@@ -34,7 +34,7 @@ import logging
 class StreamToLogger(object):
     """
     Fake file-like stream object that redirects writes to a logger instance.
-    This will help when the web browser in web_main does not show
+    This will help when the web browser in web_main does not pop-up (read: web_main crashes)
     """
     def __init__(self, logger, log_level=logging.INFO):
       self.logger = logger
@@ -74,12 +74,12 @@ class MainWindow(QMainWindow):
         self.set_search_dock()
         self.set_nav_and_status_bar()
 
-      # make all that visible
-
+      # make all that visible... I want this window on top ready to work with
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.show()
+        self.activateWindow()
 
       # signals
-
         self.browser.urlChanged.connect(self.update_urlbar)
         self.browser.urlChanged.connect(self.srch_dsp.clear)
         self.browser.urlChanged.connect(self.search_dock.hide)
@@ -94,10 +94,12 @@ class MainWindow(QMainWindow):
         self.auteurs_dsp.selectionChanged.connect(partial(self.find_selected, "auteurs"))
         self.titre_dsp.selectionChanged.connect(partial(self.find_selected, "titre"))
 
-    def set_browser(self):                      # browser
+      # browser
+    def set_browser(self):
         self.browser = QWebEngineView()
         self.browser.setUrl(QUrl("http://www.google.com"))
 
+      # info boxes
     def set_isbn_box(self):                     # info boxes isbn
         self.isbn_btn = QPushButton(" ISBN ", self)
         self.isbn_btn.setToolTip('Action sur la page initiale: "Mots-clefs à rechercher" = ISBN, coche la case "Livre".')
@@ -152,7 +154,8 @@ class MainWindow(QMainWindow):
 
         self.resize(1200,1000)
 
-    def set_search_box(self):                   # search box and buttons
+      # search box and buttons
+    def set_search_box(self):
         self.next_btn = QPushButton('Suivant', self)
         self.next_btn.clicked.connect(self.update_searching)
         self.next_btn.setToolTip("Cherche le suivant")
@@ -195,7 +198,8 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.BottomDockWidgetArea, self.search_dock)
         self.search_dock.hide()
 
-    def set_nav_and_status_bar(self) :          # set navigation toolbar and status bar
+      # set navigation toolbar
+    def set_nav_and_status_bar(self) :
         nav_tb = QToolBar("Navigation")
         nav_tb.setIconSize(QSize(20,20))
         self.addToolBar(nav_tb)
@@ -251,10 +255,7 @@ class MainWindow(QMainWindow):
         exit_btn.triggered.connect(self.select_and_exit)
         nav_tb.addAction(exit_btn)
 
-        #self.setStatusBar(QStatusBar(self))
-
-
- # search action
+  # search action
     @pyqtSlot()
     def update_searching(self, direction=QWebEnginePage.FindFlag()):
         flag = direction
@@ -269,6 +270,7 @@ class MainWindow(QMainWindow):
         self.update_searching(QWebEnginePage.FindBackward)
 
   # info boxes actions
+    @pyqtSlot()
     def set_noosearch_page(self, iam):
         if self.urlbox.text() == "https://www.noosfere.org/livres/noosearch.asp":
             if iam == "isbn": val = self.isbn
@@ -343,10 +345,10 @@ def main(data):
     # note: web_main is NOT supposed to output anything over STDOUT or STDERR
 
     logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
-    filename= os.path.join(tempfile.gettempdir(), 'nsfr_utl-web_main.log'),
-    filemode='a')
+    level = logging.DEBUG,
+    format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s',
+    filename = os.path.join(tempfile.gettempdir(), 'nsfr_utl-web_main.log'),
+    filemode = 'a')
 
     stdout_logger = logging.getLogger('STDOUT')
     sl = StreamToLogger(stdout_logger, logging.INFO)

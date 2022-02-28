@@ -29,9 +29,6 @@ from PyQt5.QtCore import qDebug, QUrl
 from time import sleep
 
 import tempfile, glob, os, contextlib
-# import glob
-# import os
-# import contextlib
 
 #         from calibre.gui2 import error_dialog, info_dialog
 
@@ -52,9 +49,10 @@ def create_menu_action_unique(ia, parent_menu, menu_text, image=None, tooltip=No
     #
     # change to notice is the use of get_icons instead of get_icon in:
     #    ac.setIcon(get_icons(image))
-    # I like blue icons :-)... ok, to be honest I could make this one work... I had lots of
+    # ok, to be honest I could make this one work... I had lots of
     # difficulties with the many common_utils.py files that have the same name
     # but different content...
+    # P.S. I like blue icons :-)...
 
     orig_shortcut = shortcut
     kb = ia.gui.keyboard
@@ -97,6 +95,11 @@ class InterfacePlugin(InterfaceAction):
     action_add_menu = True
     action_type = 'current'
     current_instance = None
+
+  # remove previous log files for web_main process in the temp dir
+    with contextlib.suppress(FileNotFoundError): os.remove(os.path.join(tempfile.gettempdir(), 'nsfr_utl-web_main.log'))
+  # remove help file that may have been updated anyway
+    with contextlib.suppress(FileNotFoundError): os.remove(os.path.join(tempfile.gettempdir(), "nfsr_utl_doc.html"))
 
     def genesis(self):
         # This method is called once per plugin, do initial setup here
@@ -190,14 +193,14 @@ class InterfacePlugin(InterfaceAction):
         ids = list(map(self.gui.library_view.model().id, rows))
         if DEBUG : prints("ids : ", ids)
 
-        # 
+        #
         nbr_ok = 0
         set_ok = set()
         for book_id in ids:
             nsfr_id_recu = self.run_one_web_main(book_id)       # nsfr_id_recu is true if metadata was updated, false if web_returned no nsfr_id
 
-            # mark books that have NOT been bypassed... so we can fetch metadata on selected             
-            if nsfr_id_recu: 
+            # mark books that have NOT been bypassed... so we can fetch metadata on selected
+            if nsfr_id_recu:
                 nbr_ok += 1
                 set_ok.add(book_id)
                 prints("set_ok", set_ok)
@@ -229,7 +232,7 @@ class InterfacePlugin(InterfaceAction):
         if DEBUG and mi.authors: prints("authors     *    : ", mi.authors)
         if DEBUG and "isbn" in mi.get_identifiers(): prints("isbn             : ", mi.get_identifiers()["isbn"])
 
-        # set url, isbn, auteurs and titre
+      # set url, isbn, auteurs and titre
         url = "https://www.noosfere.org/livres/noosearch.asp"     # jump directly to noosfere advanced search page
         if "isbn" in mi.get_identifiers(): isbn = mi.get_identifiers()["isbn"]
         auteurs = " & ".join(mi.authors)
@@ -240,19 +243,12 @@ class InterfacePlugin(InterfaceAction):
             prints(" isbn is a string : ", isinstance(isbn, str))
             prints(" auteurs is a string : ", isinstance(auteurs, str))
             prints(" titre is a string : ", isinstance(titre, str))
-  
-        # remove all trace of an old synchronization file between calibre and the outside process running QWebEngineView
+
+      # remove all trace of an old synchronization file between calibre and the outside process running QWebEngineView
         for i in glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):
             with contextlib.suppress(FileNotFoundError): os.remove(i)
-        # remove previous log files for web_main process in the temp dir
-        with contextlib.suppress(FileNotFoundError): os.remove(os.path.join(tempfile.gettempdir(), 'nsfr_utl-web_main.log'))
-        with contextlib.suppress(FileNotFoundError): os.remove(os.path.join(tempfile.gettempdir(), "nfsr_utl_doc.html"))
 
-        # initialize then clear clipboard so no old data will pollute results
-        cb = QApplication.clipboard()
-        cb.clear(mode=cb.Clipboard)
-
-        # Launch a separate process to view the URL in WebEngine
+      # Launch a separate process to view the URL in WebEngine
         self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.noosfere_util.web_main', 'data':data})
         if DEBUG: prints("webengine-dialog process submitted")
         # WARNING: "webengine-dialog" is a defined function in calibre\src\calibre\utils\ipc\worker.py ...DO NOT CHANGE...
@@ -260,21 +256,22 @@ class InterfacePlugin(InterfaceAction):
         # sleep some like 5 seconds to wait for web_main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
         # make sure that main loop is NOT responding while QWebEngineView is running.
         # That could result in hang... on purpose, I am NOT looking for control-c...
-        # that should raise attention AND trigger looking into temp dir for nsfr_utl-web_main.log 
+        # that should raise attention AND trigger looking into temp dir for nsfr_utl-web_main.log
         sleep(5)
-        
-        # wait till file is removed but loop fast enough for a user to feel the operation instantaneous
+
+      # wait till file is removed but loop fast enough for a user to feel the operation instantaneous
         while glob.glob(os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):
             sleep(.2)           # loop fast enough for a user to feel the operation instantaneous
 
-        # synch file is gone, meaning QWebEngineView process is closed so, we can collect the result in the system clipboard
-        choosen_url = cb.text(mode=cb.Clipboard)
-        if DEBUG: prints("choosen_url", choosen_url)
-        cb.clear(mode=cb.Clipboard)
+      # synch file is gone, meaning QWebEngineView process is closed so, we can collect the result
+        tpf = open(os.path.join(tempfile.gettempdir(),"report_returned_id"), "r")
+        returned_id = tpf.read()
+        tpf.close()
 
-        if "numlivre=" in choosen_url:
-            nsfr_id = "vl$"+choosen_url.split("numlivre=")[1]
+        if DEBUG: prints("returned_id", returned_id)
 
+        if (returned_id.replace("vl$","")).isnumeric():
+            nsfr_id = returned_id
             # set the nsfr_is, reset most metadata...
             for key in mi.custom_field_keys():
                 display_name, val, oldval, fm = mi.format_field_extended(key)
@@ -296,11 +293,15 @@ class InterfacePlugin(InterfaceAction):
             # commit the change, force reset of the above fields, leave the others alone
             db.set_metadata(book_id, mi, force_changes=True)
             return True
+        elif "unset" in returned_id:
+            if DEBUG: prints('unset, no change will take place...')
+            return False
+        elif "killed" in returned_id:
+            if DEBUG: prints('killed, no change will take place...')
+            return False
         else:
-            prints('no change will take place...')
             return False
 
-            
     def wipe_one_metadata(self,book_id):
         '''
         for this book_id
@@ -437,10 +438,9 @@ class InterfacePlugin(InterfaceAction):
                 'Updated the metadata in the files of {} book(s)'.format(len(ids)),
                 show=True)
 
-
     def show_configuration(self):
         '''
-        will present the configuration widget... should handle custom columns needed for 
+        will present the configuration widget... should handle custom columns needed for
         #collection and #coll_srl
         '''
         if DEBUG: prints("in show_configuration")

@@ -238,7 +238,7 @@ class MainWindow(QMainWindow):
 
         self.urlbox = QLineEdit()
         self.urlbox.returnPressed.connect(self.navigate_to_url)
-        self.urlbox.setToolTip("Tu peut même introduire une adresse, hors noosfere, mais A TES RISQUES ET PERILS... noosfere est sûr (https://), la toile par contre...")
+        self.urlbox.setToolTip("On peut même introduire une adresse, hors noosfere, mais A TES RISQUES ET PERILS... noosfere est sûr (https://), la toile par contre...")
                                 # You can even enter an address, outside of noosfere, but AT YOUR OWN RISK... noosfere is safe: (https://), the web on the other side...
         nav_tb.addWidget(self.urlbox)
 
@@ -332,7 +332,7 @@ class MainWindow(QMainWindow):
         else:
             print('No book selected, no change will take place: unset')
             self.report_returned_id("unset")
-        qApp.quit()     # exit application
+        qApp.quit()     # exit application...
 
     def closeEvent(self, event):                  # abort hit window exit "X" button
         reply = QMessageBox.question(self, 'Vraiment', "Quitter et ne plus rien changer", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
@@ -392,15 +392,18 @@ if __name__ == '__main__':
     titre = "Le Monde des Ã"
     data = [url, isbn, auteurs, titre]
     main(data)
-    print("glob.glob : ", glob.glob(os.path.join(tempfile.gettempdir(),"Xvl$*")))
-    # cb = Application.clipboard()
-    # print(cb.text(mode=cb.Clipboard))
-    # choosen_url = cb.text(mode=cb.Clipboard)
-    # cb.clear(mode=cb.Clipboard)
 
-    # if "numlivre=" in choosen_url:
-    #     print('choosen_url from clipboard',choosen_url)
-    #     nsfr_id = "vl$"+choosen_url.split("numlivre=")[1]
-    #     print("nsfr_id : ", nsfr_id)
-    # else:
-    #     print('no change will take place...')
+    tpf = open(os.path.join(tempfile.gettempdir(),"report_returned_id"), "r")
+    returned_id = tpf.read()
+    tpf.close()
+
+  # from here should modify the metadata, or not.
+    if returned_id.replace("vl$","").replace("-","").isnumeric():
+        nsfr_id = returned_id
+        print("nfsr_id : ", nsfr_id)
+    elif "unset" in returned_id:
+        print('unset, no change will take place...')
+    elif "killed" in returned_id:
+        print('killed, no change will take place...')
+    else:
+        print("should not ends here... returned_id : ", returned_id)

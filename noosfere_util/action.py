@@ -270,7 +270,7 @@ class InterfacePlugin(InterfaceAction):
 
         if DEBUG: prints("returned_id", returned_id)
 
-        if (returned_id.replace("vl$","")).isnumeric():
+        if returned_id.replace("vl$","").replace("-","").isnumeric():
             nsfr_id = returned_id
             # set the nsfr_is, reset most metadata...
             for key in mi.custom_field_keys():
@@ -300,40 +300,41 @@ class InterfacePlugin(InterfaceAction):
             if DEBUG: prints('killed, no change will take place...')
             return False
         else:
+            if DEBUG: print("should not ends here... returned_id : ", returned_id)
             return False
 
-    def wipe_one_metadata(self,book_id):
-        '''
-        for this book_id
-        Deletes publisher, tags, series, rating, #coll_srl, #collection, and any ID
-        except ISBN. All other fields are supposed to be overwritten when new matadata
-        is downloaded from noosfere. ISBN will be wiped when nsfr_id is written later.
-        '''
-        if DEBUG: prints("in wipe_one_metadata")
+    # def wipe_one_metadata(self,book_id):
+    #     '''
+    #     for this book_id
+    #     Deletes publisher, tags, series, rating, #coll_srl, #collection, and any ID
+    #     except ISBN. All other fields are supposed to be overwritten when new matadata
+    #     is downloaded from noosfere. ISBN will be wiped when nsfr_id is written later.
+    #     '''
+    #     if DEBUG: prints("in wipe_one_metadata")
 
-        db = self.gui.current_db.new_api
-        # Get the current metadata for this book from the db (not any info about cover)
-        mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
+    #     db = self.gui.current_db.new_api
+    #     # Get the current metadata for this book from the db (not any info about cover)
+    #     mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
 
-        for key in mi.custom_field_keys():
-            display_name, val, oldval, fm = mi.format_field_extended(key)
-            if "coll_srl" in display_name : cstm_coll_srl_fm=fm
-            if "collection" in display_name : cstm_collection_fm=fm
+    #     for key in mi.custom_field_keys():
+    #         display_name, val, oldval, fm = mi.format_field_extended(key)
+    #         if "coll_srl" in display_name : cstm_coll_srl_fm=fm
+    #         if "collection" in display_name : cstm_collection_fm=fm
 
-        mi.publisher=""
-        mi.series=""
-        mi.language=""
-        mi.pubdate=UNDEFINED_DATE
-        mi.set_identifier('nsfr_id', "")
+    #     mi.publisher=""
+    #     mi.series=""
+    #     mi.language=""
+    #     mi.pubdate=UNDEFINED_DATE
+    #     mi.set_identifier('nsfr_id', "")
 
-        if cstm_coll_srl_fm:
-            cstm_coll_srl_fm["#value#"] = ""
-            mi.set_user_metadata("#coll_srl",cstm_coll_srl_fm)
-        if cstm_collection_fm:
-            cstm_collection_fm["#value#"] = ""
-            mi.set_user_metadata("#collection",cstm_collection_fm)
+    #     if cstm_coll_srl_fm:
+    #         cstm_coll_srl_fm["#value#"] = ""
+    #         mi.set_user_metadata("#coll_srl",cstm_coll_srl_fm)
+    #     if cstm_collection_fm:
+    #         cstm_collection_fm["#value#"] = ""
+    #         mi.set_user_metadata("#collection",cstm_collection_fm)
 
-        db.set_metadata(book_id, mi, force_changes=True)
+    #     db.set_metadata(book_id, mi, force_changes=True)
 
     def wipe_selected_metadata(self):
         '''
@@ -355,7 +356,30 @@ class InterfacePlugin(InterfaceAction):
         if DEBUG : prints("ids : ", ids)
 
         for book_id in ids:
-            self.wipe_one_metadata(book_id)
+            db = self.gui.current_db.new_api
+            # Get the current metadata for this book from the db (not any info about cover)
+            mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
+            # find custom field of interest
+            for key in mi.custom_field_keys():
+                display_name, val, oldval, fm = mi.format_field_extended(key)
+                if "coll_srl" in display_name : cstm_coll_srl_fm=fm
+                if "collection" in display_name : cstm_collection_fm=fm
+            # reset the metadata fields that need to be (publisher, series, language, pubdate, identifier)
+            # leaving those we want to keep (isbn, autors, title) and those we know will be replaced or
+            # augmented (comments, rating, tag, whatever custom columns...)
+            mi.publisher=""
+            mi.series=""
+            mi.language=""
+            mi.pubdate=UNDEFINED_DATE
+            mi.set_identifier('nsfr_id', "")
+            if cstm_coll_srl_fm:
+                cstm_coll_srl_fm["#value#"] = ""
+                mi.set_user_metadata("#coll_srl",cstm_coll_srl_fm)
+            if cstm_collection_fm:
+                cstm_collection_fm["#value#"] = ""
+                mi.set_user_metadata("#collection",cstm_collection_fm)
+            # commit changes
+            db.set_metadata(book_id, mi, force_changes=True)
 
         if DEBUG: prints('Updated the metadata in the files of {} book(s)'.format(len(ids)))
 

@@ -1,7 +1,7 @@
-The noosfere utilité plugin
-===========================
+The noosfere_util plugin
+========================
 
-Created just to learn Python... I have fun :-). Please
+Created just to learn Python... I had fun :-). Please
 consider that I have no problem with, and reserve the 
 right to ignore any error, choice and poor optimization.
 I use it, it is MY problem... You use it, it is YOUR problem.

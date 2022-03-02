@@ -243,9 +243,9 @@ class MainWindow(QMainWindow):
         nav_tb.addWidget(self.urlbox)
 
         abort_btn = QAction(get_icons('blue_icon/abort.png'), "Abort", self)
-        abort_btn.setToolTip("On arrête tout, on oublie tout et on ne change rien")
+        abort_btn.setToolTip("On arrête, on oublie et on ne change rien au livre")
                               # Stop everything, forget everything and change nothing
-        abort_btn.triggered.connect(self.close)             # may need another slot for abort this book , proceed next
+        abort_btn.triggered.connect(self.abort_book)             # may need another slot for abort this book , proceed next
         nav_tb.addAction(abort_btn)
 
         exit_btn = QAction(get_icons('blue_icon/exit.png'), "Select and exit", self)
@@ -334,11 +334,19 @@ class MainWindow(QMainWindow):
             self.report_returned_id("unset")
         qApp.quit()     # exit application...
 
+    def abort_book(self):
+        reply = QMessageBox.question(self, 'Certain', "Oublier ce livre et passer au suivant", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
+        if reply == QMessageBox.Yes:
+            print("WebEngineView was aborted: aborted")
+            self.report_returned_id("aborted")
+            qApp.quit()     # exit application...
+
+
     def closeEvent(self, event):                  # abort hit window exit "X" button
         reply = QMessageBox.question(self, 'Vraiment', "Quitter et ne plus rien changer", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
             event.accept()
-            print("WebEngineView was either aborted or closed: killed")
+            print("WebEngineView was closed: killed")
             self.report_returned_id("killed")
             super().closeEvent(event)
         else:

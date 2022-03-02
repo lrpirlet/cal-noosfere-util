@@ -1,0 +1,12 @@
+﻿<body> <h1><u>Le plugin <b>noosfere_util</b></u></h1><p>Ce plugin devrait compléter cal-noosfere.</p><h2>Problèmes dans&nbsp;noosfere :</h2><p> </p><ol><li>Cal-noosfere ne peut pas effacer un nouveau champ de métadonnées vide.<br/>Exemple : si un téléchargement de la source de métadonnées, venant de n'importe où, a mis la série à &quot;quelque chose&quot;, et que la source de métadonnées noosfere ne trouve AUCUNE série, alors calibre n'effacera PAS le champ série.</li>
+			<li>Un livre peut exister sous plusieurs volumes.<br/>Chacun d'eux peut différer en raison d'une réédition par le même éditeur ou par un éditeur différent. Il peut même faire partie d'une ou plusieurs anthologies avec éventuellement un auteur et/ou un titre et/ou un ISBN différent. J'ai fait un choix mais ce n'est peut-être PAS le meilleur. La solution est d'aller manuellement sur la page du livre et de choisir le meilleur volume en définissant le nsfr_id, et en redémarrant le plugin source de métadonnées cal-noosfere.
+&nbsp;	&nbsp;&nbsp;</li><li>Cal-noosfere ne permet pas de modifier la colonne personnalisée.<div>Cependant, il permet de surcharger le champ éditeur avec la collection et l'index de la collection. Il devient alors nécessaire de diviser ces informations en colonnes personnalisées.</div>
+			
+			</li></ol><p>Ainsi, sélectionnez dans calibre quelques livres pertinents dont le volume (l'édition) affiché est incorrect.</p>
+		<ul><li>Utilisez calibre-utilité pour effacer leurs métadonnées, à l'exception du titre, des auteurs et des identifiants tels que l'ISBN, et pour ajouter l'identifiant nsfr_id du volume de votre choix.</li>
+			<li>Exécutez une mise à jour des métadonnées pour alimenter calibre avec les informations associées à votre choix.</li>
+			<li>Sélectionnez les livres pertinents dont le champ éditeur est surchargé. Utilisez calibre_util pour configurer l'éditeur et la collection d'éditeurs personnalisés et la série de collections personnalisées.</li></ul><h2>Mode d'emploi</h2>
+	<h3>Effacer des métadonnées</h3>
+	<ul><li>Sélectionnez un ou une série de livres dans calibre.</li>
+		<li>Appelez noosfere_util en actionnant l'icone.</li>
+		<li>Dans le menu déroulant activez &quot;Efface les métadonnées en surplus&quot;.</li></ul><p>Les lignes sélectionnées ont perdu toutes les informations relatives</p></body>

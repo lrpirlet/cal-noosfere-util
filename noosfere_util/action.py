@@ -4,6 +4,7 @@
 __license__   = 'GPL v3'
 __copyright__ = '2021, Louis Richard Pirlet'
 
+from typing import Collection
 from calibre import prints
 from calibre.constants import DEBUG
 from calibre.ebooks.metadata.meta import set_metadata
@@ -117,12 +118,12 @@ class InterfacePlugin(InterfaceAction):
 
         self.menu.addSeparator()
 
-        create_menu_action_unique(self, self.menu, _("Distribue l'information editeur"), 'blue_icon/eclate.png',
+        create_menu_action_unique(self, self.menu, _("Distribue l'information éditeur"), 'blue_icon/eclate.png',
                                   triggered=self.unscramble_publisher)
 
         self.menu.addSeparator()
 
-        create_menu_action_unique(self, self.menu, _("Personnalise l'extention")+'...', 'blue_icon/config.png',
+        create_menu_action_unique(self, self.menu, _("Personnalise l'extension")+'...', 'blue_icon/config.png',
                                   triggered=self.show_configuration)
 
         self.menu.addSeparator()
@@ -327,6 +328,40 @@ class InterfacePlugin(InterfaceAction):
 
     def unscramble_publisher(self):
         if DEBUG: prints("in unscramble_publisher")
+      # Get currently selected books
+        rows = self.gui.library_view.selectionModel().selectedRows()
+        if not rows or len(rows) == 0:
+            return error_dialog(self.gui, 'Cannot update metadata', 'No books selected', show=True)
+
+        # Map the rows to book ids
+        ids = list(map(self.gui.library_view.model().id, rows))
+        if DEBUG: prints("ids : ", ids)
+        db = self.gui.current_db.new_api
+        for book_id in ids:
+          # Get the current metadata of interest for this book from the db
+            mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
+            scrbl_dt = mi.publisher     # POCKET§Science-Fiction / Fantasy€005034
+            if "€" in scrbl_dt: scrbl_dt, coll_srl = scrbl_dt.split("€")
+            if "§" in scrbl_dt: scrbl_dt, collection = scrbl_dt.split("§")
+            if DEBUG: prints("collection           : ", collection)
+            if DEBUG: prints("coll_srl             : ", coll_srl)
+            if DEBUG: prints("éditeur (scrbl_dt)   : ", scrbl_dt)            
+          # Set the current metadata of interest for this book in the db
+            for key in mi.custom_field_keys():
+                display_name, val, oldval, fm = mi.format_field_extended(key)
+                if fm and fm['datatype'] != 'composite':
+                    if "coll_srl" in display_name : cstm_coll_srl_fm=fm
+                    if "collection" in display_name : cstm_collection_fm=fm
+
+            # mi.publisher="scrbl_dt"
+            # cstm_coll_srl_fm["#value#"] = "coll_srl"
+            # mi.set_user_metadata("#coll_srl",cstm_coll_srl_fm)
+
+            # cstm_collection_fm["#value#"] = "collection"
+            # mi.set_user_metadata("#collection",cstm_collection_fm)
+
+            # db.set_metadata(book_id, mi, force_changes=True)
+
 
     def testtesttest(self):
         if DEBUG: prints("in testtesttest")
@@ -412,6 +447,8 @@ class InterfacePlugin(InterfaceAction):
     def show_help(self):
          # Extract on demand the help file resource to a temp file
         def get_help_file_resource():
+          # keep "nfsr_utl_doc.html" as the last item in the list, this is the help entry point
+          # we need both files for the help
             file_path = os.path.join(tempfile.gettempdir(), "nfsr_utl_doc.html")
             file_data = self.load_resources('doc/' + "nfsr_utl_doc.html")['doc/' + "nfsr_utl_doc.html"]
             if DEBUG: prints('show_help - file_path:', file_path)

@@ -2,7 +2,7 @@
 # vim:fileencoding=utf-8
 
 __license__   = 'GPL v3'
-__copyright__ = '2021, Louis Richard Pirlet'
+__copyright__ = '2022, Louis Richard Pirlet'
 
 from PyQt5.QtCore import pyqtSlot, QUrl, QSize, Qt, pyqtSignal
 from PyQt5.QtWidgets import (QMainWindow, QToolBar, QAction, QLineEdit, QStatusBar,
@@ -43,23 +43,27 @@ class Search_Panel(QWidget):
     def __init__(self,parent=None):
         super(Search_Panel,self).__init__(parent)
 
-        self.case_btn = QPushButton('Match &Case', checkable=True)
-        self.case_btn.clicked.connect(self.update_searching)
-        if isinstance(self.case_btn, QPushButton): self.case_btn.clicked.connect(self.setFocus)
+        # self.case_btn = QPushButton('Match &Case', checkable=True)
+        # self.case_btn.clicked.connect(self.update_searching)
+        # if isinstance(self.case_btn, QPushButton): self.case_btn.clicked.connect(self.setFocus)
 
-        next_btn = QPushButton('&Next')
+        next_btn = QPushButton('Suivant')
+        next_btn.setToolTip("Ce bouton recherche le prochainne occurence dans la page")
         next_btn.clicked.connect(self.update_searching)
         if isinstance(next_btn, QPushButton): next_btn.clicked.connect(self.setFocus)
 
-        prev_btn = QPushButton('&Previous')
+        prev_btn = QPushButton('Précédent')
+        prev_btn.setToolTip("Ce bouton recherche l'occurence précédente dans la page")
         prev_btn.clicked.connect(self.on_preview_find)
         if isinstance(prev_btn, QPushButton): prev_btn.clicked.connect(self.setFocus)
 
-        done_btn = QPushButton("&Done")
+        done_btn = QPushButton("Terminé")
+        done_btn.setToolTip("Ce bouton ferme la barre de recherche")
         done_btn.clicked.connect(self.closed)
         if isinstance(done_btn, QPushButton): done_btn.clicked.connect(self.setFocus)
 
         self.srch_dsp = QLineEdit()
+        self.srch_dsp.setToolTip(" Cette boite contient le texte à chercher dans la page")
         if isinstance(self.srch_dsp, QPushButton): self.srch_dsp.clicked.connect(self.setFocus)
         self.setFocusProxy(self.srch_dsp)
         self.srch_dsp.textChanged.connect(self.update_searching)
@@ -67,7 +71,7 @@ class Search_Panel(QWidget):
         self.closed.connect(self.srch_dsp.clear)
 
         self.srch_lt = QHBoxLayout(self)
-        self.srch_lt.addWidget(self.case_btn)
+        # self.srch_lt.addWidget(self.case_btn)
         self.srch_lt.addWidget(self.srch_dsp)
         self.srch_lt.addWidget(next_btn)
         self.srch_lt.addWidget(prev_btn)
@@ -84,8 +88,8 @@ class Search_Panel(QWidget):
     @pyqtSlot()
     def update_searching(self, direction=QWebEnginePage.FindFlag()):
         flag = direction
-        if self.case_btn.isChecked():
-            flag |= QWebEnginePage.FindCaseSensitively
+        # if self.case_btn.isChecked():
+        #     flag |= QWebEnginePage.FindCaseSensitively
         self.searched.emit(self.srch_dsp.text(), flag)
 
     def showEvent(self, event):
@@ -136,7 +140,7 @@ class MainWindow(QMainWindow):
       # info boxes
     def set_isbn_box(self):                     # info boxes isbn
         self.isbn_btn = QPushButton(" ISBN ", self)
-        self.isbn_btn.setToolTip('Action sur la page initiale: "Mots-clefs à rechercher" = ISBN, coche la case "Livre".')
+        self.isbn_btn.setToolTip('Action sur la page noosfere initiale: "Mots-clefs à rechercher" = ISBN, coche la case "Livre".')
                                    # Action on home page: "Mots-clefs à rechercher" = ISBN, set checkbox "Livre".
         self.isbn_dsp = QLineEdit()
         self.isbn_dsp.setReadOnly(True)
@@ -150,7 +154,7 @@ class MainWindow(QMainWindow):
 
     def set_auteurs_box(self):                  # info boxes auteurs
         self.auteurs_btn = QPushButton("Auteur(s)", self)
-        self.auteurs_btn.setToolTip('Action sur la page initiale: "Mots-clefs à rechercher" = Auteur(s), coche la case "Auteurs".')
+        self.auteurs_btn.setToolTip('Action sur la page noosfere initiale: "Mots-clefs à rechercher" = Auteur(s), coche la case "Auteurs".')
                                       # Action on home page: "Mots-clefs à rechercher" = Auteur(s), set checkbox "Auteurs".
         self.auteurs_dsp = QLineEdit()
         self.auteurs_dsp.setReadOnly(True)
@@ -163,7 +167,7 @@ class MainWindow(QMainWindow):
 
     def set_titre_box(self):                    # info boxes titre
         self.titre_btn = QPushButton("Titre", self)
-        self.titre_btn.setToolTip('Action sur la page initiale: "Mots-clefs à rechercher" = Titre, coche la case "Livres".')
+        self.titre_btn.setToolTip('Action sur la page noosfere initiale: "Mots-clefs à rechercher" = Titre, coche la case "Livres".')
                                     # Action on home page: "Mots-clefs à rechercher" = Titre, set checkbox "Livres".
         self.titre_dsp = QLineEdit()
         self.titre_dsp.setReadOnly(True)
@@ -231,7 +235,7 @@ class MainWindow(QMainWindow):
         nav_tb.addSeparator()
 
         find_btn = QAction(get_icons('blue_icon/search.png'), "Search", self)
-        find_btn.setStatusTip("On arrête de charger la page")                       # Stop loading the page
+        find_btn.setToolTip("Ce bouton fait apparaitre la barre de recherche... Z'avez pas vu Mirza? Oh la la la la la. Où est donc passé ce chien. Je le cherche partout...  (Merci Nino Ferrer)")   # Cherche, cherche...
         find_btn.triggered.connect(self.wake_search_panel)
         find_btn.setShortcut(QKeySequence.Find)
         nav_tb.addAction(find_btn)
@@ -243,13 +247,13 @@ class MainWindow(QMainWindow):
         nav_tb.addWidget(self.urlbox)
 
         abort_btn = QAction(get_icons('blue_icon/abort.png'), "Abort", self)
-        abort_btn.setToolTip("On arrête, on oublie et on ne change rien au livre")
+        abort_btn.setToolTip("On arrête, on oublie, on ne change rien au livre... au suivant")
                               # Stop everything, forget everything and change nothing
         abort_btn.triggered.connect(self.abort_book)             # may need another slot for abort this book , proceed next
         nav_tb.addAction(abort_btn)
 
         exit_btn = QAction(get_icons('blue_icon/exit.png'), "Select and exit", self)
-        exit_btn.setToolTip("On sélectionne cet URL pour extraction de nsfr_id, on continue")
+        exit_btn.setToolTip("On sélectionne cet URL pour extraction de nsfr_id... au suivant")
                              # select this URL for extraction of nsfr_id, continue
         exit_btn.triggered.connect(self.select_and_exit)
         nav_tb.addAction(exit_btn)

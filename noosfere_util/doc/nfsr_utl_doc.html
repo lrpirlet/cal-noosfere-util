@@ -6,7 +6,66 @@
 		<ul><li>Utilisez calibre-utilité pour effacer leurs métadonnées, à l'exception du titre, des auteurs et des identifiants tels que l'ISBN, et pour ajouter l'identifiant nsfr_id du volume de votre choix.</li>
 			<li>Exécutez une mise à jour des métadonnées pour alimenter calibre avec les informations associées à votre choix.</li>
 			<li>Sélectionnez les livres pertinents dont le champ éditeur est surchargé. Utilisez calibre_util pour configurer l'éditeur et la collection d'éditeurs personnalisés et la série de collections personnalisées.</li></ul><h2>Mode d'emploi</h2>
-	<h3>Effacer des métadonnées</h3>
+	<h3>Efface les métadonnées en surplus</h3>
 	<ul><li>Sélectionnez un ou une série de livres dans calibre.</li>
 		<li>Appelez noosfere_util en actionnant l'icone.</li>
-		<li>Dans le menu déroulant activez &quot;Efface les métadonnées en surplus&quot;.</li></ul><p>Les lignes sélectionnées ont perdu toutes les informations relatives</p></body>
+		<li>Dans le menu déroulant activez &quot;Efface les métadonnées en surplus&quot;.</li></ul><p>Les lignes sélectionnées ont perdu toutes les informations relatives aux champs Editeur, Série, Langues, date de modification, nsfr_id et les champs personnalisés contenant la collection définie par l'éditeur ainsi que son numéro de série. (#collection et #coll_srl tels que définis chez moi)</p>
+	<h3>Navigateur Web pour le choix du volume</h3>
+	<ul><li>Sélectionnez un ou une série de livres dans calibre.</li>
+		<li>Appelez noosfere_util en actionnant l'icone.</li>
+		<li>Dans le menu déroulant activez &quot;Navigateur Web pour le choix du volume&quot;&quot;</li>
+		<li>Un navigateur web apparait et présente la page de recherche avancée de noosfere</li>
+		<li> A l'aide du navigateur et des boutons dédiés, naviguer vers l'édition du titre désiré&nbsp;</li>
+		<li>Sortir du navigateur en utilisant le bouton bleu en haut à gauche pour enregistrer le choix</li>
+		<li>dans calibre, toutes les lignes traitées sont sélectionnée pour téléchargement des métadonnées</li>
+		</ul><p>Les lignes sélectionnées sont marquées et sélectionnées. Il suffit de lancer le téléchargement des données pour obtenir les métadonées correspondantes au choix. En fait, les lignes sélectionnées ont perdu toutes les informations relatives aux champs Editeur, Série, Langues, date de modification, ISBN et les champs personnalisés contenant la collection définie par l'éditeur ainsi que son numéro de série. (#collection et #coll_srl tels que définis chez moi). Le nsfr_id est défini, il sert de guide au choix.</p>
+	
+	<pre>Je me sers de ce navigateur ainsi: 
+j'active l'un des ISBN, Auteurs ou titre. 
+J'active &quot;Envoyer&quot;. J'observe la zone de titre... 
+Quand la page correspondante est affichée, je recherche, si besoin, le titre ou l'auteur... 
+Je navigue vers l'édition que je veux.. 
+Je valide par la flèche de sortie si je suis content...
+	ou bien je sort par esc pour annuler le changement sur cette ligne...
+	ou encore je ferme la fenêtre par le signe X pour laisser tomber cette ligne et toutes les autres suivantes sélectionnées.
+Dans calibre, je démarre le téléchargement des métadonnées, je sélectionne noosfere DB comme seule source de métadonnées et je lance le processus...
+</pre><p>Note:&nbsp;</p>
+	<ul><li>on présume que noosfere DB est installé</li>
+		<li>le navigateur est programmé pour être au dessus de calibre, l'accès a celui-ci n'est possible qu'après fermeture de toutes les instance de ce navigateur. Pour sortir en vitesse et annuler toutes les lignes suivantes, agir sur le bouton x de la fenêtre.</li>
+		<li>Chaque bouton, boite est commenté dans des bulles, dans le titre (observez celui-ci quand on charge une page) ou dans la zone d'état en bas de page.</li>
+		
+		</ul><h4>Navigateur web, un instantané...</h4><figure>
+    <img alt="noosfere util web 075" title="noosfere util web 075" src="file://D:/Users/Papa/Documents/GIT/cal-noosfere-util/noosfere_util/doc/noosfere_util_web_075.png"/>
+    
+  </figure>
+	<ul><li>Titre et zone de controle de la fenêtre: <ul><li>titre: contient la dénomination de la page web, ou bien montre le progrès du chargement de la page</li>
+				<li>signe - : réduit la fenêtre (attention, ne donne PAS accès à calibre)</li>
+				<li>signe carré: agrandit la fenêtre</li>
+				<li>signe X : stoppe le traitement de la ligne et de toutes les lignes suivantes</li>
+				</ul></li><li>Barre de navigation:<ul><li>fleche à gauche: recule à la page précédente (si elle existe)</li>
+				<li>flèche à droite: avance à la page suivante (si elle existe)</li>
+				<li>flèches circulaires: recharge la page</li>
+				<li>maison: va à la page de recherche avancée de noosfere</li>
+				<li>X: stoppe le chargement</li>
+				<li>loupe: invoque le recherche (ctrl-f est fonctionnel)</li>
+				<li>boite de l'adresse, éditable, on peut aller n'importe où... (attention, sécurité non garantie!!!)</li>
+				<li>esc: stoppe le traitement de la ligne et passe à la ligne suivante</li>
+				<li>flèche de sortie: enregistre le nsfr_id et passe à la ligne suivante</li>
+				</ul></li><li>Partie centrale: contenu de la page dont l'url est dans la boite de l'adresse... ici la page de recherche avancée &nbsp;de noosfere</li>
+		<li>Zone de trois barres d'information:<ul><li>bouton ISBN: copie le contenu de la boite ISBN dans la boite de recherche de noosfere, coche la case &quot;Livres&quot;, tant que l'adresse de la page est https://www.noosfere.org/livres/noosearch.asp</li>
+				<li>boite ISBN: contient le ISBN tel que défini dans calibre avant traitement</li><li>bouton Auteurs: copie le contenu de la boite Auteurs dans la boite de recherche de noosfere, coche la case &quot;Auteurs&quot;, tant que l'adresse de la page est https://www.noosfere.org/livres/noosearch.asp</li>
+				<li>boite Auteurs: contient le(s) Auteur(s) tel(s) que défini(s) dans calibre avant traitement</li>
+				<li>bouton Titre: copie le contenu de la boite Titre&nbsp;dans la boite de recherche de noosfere, coche la case &quot;Livres&quot;, tant que l'adresse de la page est https://www.noosfere.org/livres/noosearch.asp</li>
+				<li>boite Titre: contient le Titre&nbsp;tel que défini dans calibre avant traitement</li>
+				</ul></li><li>Barre de recherche, activée par la loupe ou &lt;ctrl&gt;f:<ul><li>boite qui contient le texte a rechercher (exemple: je copie le titre et le colle ici). La recherche démarre quand le texte change</li>
+				<li>Suivant: recherche une occurrence suivante</li>
+				<li>Précédent: recherche une occurrence précédente</li>
+				<li>Terminé: efface la boite de recherche et ferme la barre de recherche</li>
+				</ul></li><li>&nbsp;zone de status: affiche un message si aucune occurence n'existe.&nbsp;</li>
+		
+		
+		
+		
+		</ul><div> <h2>Distribue l'information éditeur</h2>
+		</div><div> <h2>Personnalise l'extension</h2>
+		</div><p></p></body>

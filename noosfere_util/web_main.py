@@ -204,7 +204,7 @@ class MainWindow(QMainWindow):
       # set navigation toolbar
     def set_nav_and_status_bar(self) :
         nav_tb = QToolBar("Navigation")
-        nav_tb.setIconSize(QSize(20,20))
+        nav_tb.setIconSize(QSize(24,24))
         self.addToolBar(nav_tb)
 
         back_btn = QAction(get_icons('blue_icon/back.png'), "Back", self)
@@ -251,6 +251,8 @@ class MainWindow(QMainWindow):
                               # Stop everything, forget everything and change nothing
         abort_btn.triggered.connect(self.abort_book)             # may need another slot for abort this book , proceed next
         nav_tb.addAction(abort_btn)
+
+        nav_tb.addSeparator()
 
         exit_btn = QAction(get_icons('blue_icon/exit.png'), "Select and exit", self)
         exit_btn.setToolTip("On sélectionne cet URL pour extraction de nsfr_id... au suivant")

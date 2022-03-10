@@ -24,8 +24,6 @@ from time import sleep
 
 import tempfile, glob, os, contextlib
 
-#         from calibre.gui2 import error_dialog, info_dialog
-
 def create_menu_action_unique(ia, parent_menu, menu_text, image=None, tooltip=None,
                        shortcut=None, triggered=None, is_checked=None, shortcut_name=None,
                        unique_name=None, favourites_menu_unique_name=None):
@@ -81,9 +79,9 @@ def create_menu_action_unique(ia, parent_menu, menu_text, image=None, tooltip=No
 
 class InterfacePlugin(InterfaceAction):
 
-    name = 'noosfere utilités'
+    name = 'noosfere util'
 
-    action_spec = ("noosfere utilités", None,
+    action_spec = ("noosfere util", None,
             "lance les utilités pour noosfere DB", None)
     popup_type = QToolButton.InstantPopup
     action_add_menu = True
@@ -107,33 +105,27 @@ class InterfacePlugin(InterfaceAction):
     def build_menus(self):
         self.menu = QMenu(self.gui)
         self.menu.clear()
-
         create_menu_action_unique(self, self.menu, _('Efface les metadonnées en surplus'), 'blue_icon/wipe_it.png',
                                   triggered=self.wipe_selected_metadata)
-
         self.menu.addSeparator()
 
         create_menu_action_unique(self, self.menu, _('Navigateur Web pour le choix du volume'), 'blue_icon/choice.png',
                                   triggered=self.run_web_main)
-
         self.menu.addSeparator()
 
         create_menu_action_unique(self, self.menu, _("Distribue l'information éditeur"), 'blue_icon/eclate.png',
                                   triggered=self.unscramble_publisher)
-
         self.menu.addSeparator()
 
         create_menu_action_unique(self, self.menu, _("Personnalise l'extension")+'...', 'blue_icon/config.png',
                                   triggered=self.show_configuration)
-
         self.menu.addSeparator()
 
         create_menu_action_unique(self, self.menu, _('Help'), 'blue_icon/documentation.png',
                                   triggered=self.show_help)
-
         create_menu_action_unique(self, self.menu, _('About'), 'blue_icon/about.png',
                                   triggered=self.about)
-
+        self.menu.addSeparator()
         create_menu_action_unique(self, self.menu, _('testtesttest'), 'blue_icon/top_icon.png',
                                   triggered=self.testtesttest)
 
@@ -331,7 +323,8 @@ class InterfacePlugin(InterfaceAction):
       # Get currently selected books
         rows = self.gui.library_view.selectionModel().selectedRows()
         if not rows or len(rows) == 0:
-            return error_dialog(self.gui, 'Cannot update metadata', 'No books selected', show=True)
+            return error_dialog(self.gui, 'Pas de métadonnée affectée',
+                             'Aucun livre selectionné', show=True)
 
         # Map the rows to book ids
         ids = list(map(self.gui.library_view.model().id, rows))
@@ -340,38 +333,36 @@ class InterfacePlugin(InterfaceAction):
         for book_id in ids:
           # Get the current metadata of interest for this book from the db
             mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
-            scrbl_dt = mi.publisher     # POCKET§Science-Fiction / Fantasy€005034
-            if "€" in scrbl_dt: scrbl_dt, coll_srl = scrbl_dt.split("€")
-            if "§" in scrbl_dt: scrbl_dt, collection = scrbl_dt.split("§")
-            if DEBUG: prints("collection           : ", collection)
-            if DEBUG: prints("coll_srl             : ", coll_srl)
-            if DEBUG: prints("éditeur (scrbl_dt)   : ", scrbl_dt)            
-          # Set the current metadata of interest for this book in the db
-            for key in mi.custom_field_keys():
-                display_name, val, oldval, fm = mi.format_field_extended(key)
-                if fm and fm['datatype'] != 'composite':
-                    if "coll_srl" in display_name : cstm_coll_srl_fm=fm
-                    if "collection" in display_name : cstm_collection_fm=fm
+            scrbl_dt = mi.publisher
+            if scrbl_dt:
+                collection, coll_srl = "",""
+                if "€" in scrbl_dt: scrbl_dt, coll_srl = scrbl_dt.split("€")
+                if "§" in scrbl_dt: scrbl_dt, collection = scrbl_dt.split("§")
+                if DEBUG: prints("collection           : ", collection)
+                if DEBUG: prints("coll_srl             : ", coll_srl)
+                if DEBUG: prints("éditeur (scrbl_dt)   : ", scrbl_dt)
+              # Set the current metadata of interest for this book in the db
+                db.set_field("#collection", {book_id: collection})
+                db.set_field("#coll_srl", {book_id: coll_srl})
+                db.set_field("publisher", {book_id: scrbl_dt})
+                self.gui.iactions['Edit Metadata'].refresh_gui([book_id])
 
-            # mi.publisher="scrbl_dt"
-            # cstm_coll_srl_fm["#value#"] = "coll_srl"
-            # mi.set_user_metadata("#coll_srl",cstm_coll_srl_fm)
-
-            # cstm_collection_fm["#value#"] = "collection"
-            # mi.set_user_metadata("#collection",cstm_collection_fm)
-
-            # db.set_metadata(book_id, mi, force_changes=True)
-
+        info_dialog(self.gui, 'Information distribuée',
+                "L'informationa été distribuée pour {} livre(s)".format(len(ids)),
+                show=True)
 
     def testtesttest(self):
         if DEBUG: prints("in testtesttest")
+        from calibre_plugins.noosfere_util.config import prefs
+        prints("prefs", prefs)
 
         # Get currently selected books
         rows = self.gui.library_view.selectionModel().selectedRows()
         # prints("rows type : ", type(rows), "rows", rows) rows are selected rows in calibre
         if not rows or len(rows) == 0:
-            return error_dialog(self.gui, 'Cannot update metadata',
-                             'No books selected', show=True)
+            return error_dialog(self.gui, 'Pas de métadonnée affectée',
+                             'Aucun livre selectionné', show=True)
+
         # Map the rows to book ids
         ids = list(map(self.gui.library_view.model().id, rows))
         prints("ids : ", ids)
@@ -407,7 +398,12 @@ class InterfacePlugin(InterfaceAction):
                 #prints("display_name=%s, val=%s, oldval=%s, ff=%s" % (display_name, val, oldval, fm))
                 if fm and fm['datatype'] != 'composite':
                     prints("custom_field_keys not composite : ", key)
-                    prints("display_name=%s, val=%s, oldval=%s, ff=%s" % (display_name, val, oldval, fm))
+                    #prints("display_name=%s, val=%s, oldval=%s, ff=%s" % (display_name, val, oldval, fm))
+                    prints("display_name : ", display_name)
+                    # prints("fm : ", fm)
+                    for key in fm:
+                        prints("fm keys : ", key, end="      | " )
+                        prints("fm[{}] : ".format(key), fm[key])
                     prints(20*"..")
                 if "coll_srl" in display_name : cstm_coll_srl_fm=fm
                 if "collection" in display_name : cstm_collection_fm=fm
@@ -470,4 +466,5 @@ class InterfacePlugin(InterfaceAction):
         # do something based on the settings in prefs
         if DEBUG: prints("in apply_settings")
         if DEBUG: prints("prefs", prefs)        # prefs is a dict {}
+        prints("prefs", prefs)
         prefs

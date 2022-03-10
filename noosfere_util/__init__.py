@@ -19,7 +19,7 @@ class noosfereutil(InterfaceActionBase):
     The reason for having two classes is that it allows the command line
     calibre utilities to run without needing to load the GUI libraries.
     '''
-    name                = "noosfere utilités"
+    name                = "noosfere util"
     description         = ("Utilités pour noosfere DB, permet de choisir et fixer"
                         "le nsfr_id avant de lancer la recherche de metadata. "
                         )#"Annule les champs tels que series remplis par erreur. "
@@ -78,12 +78,3 @@ class noosfereutil(InterfaceActionBase):
         ac = self.actual_plugin_
         if ac is not None:
             ac.apply_settings()
-
-
-# For testing, run from command line with this:
-# calibre-debug -e __init__.py
-if __name__ == '__main__':
-    from PyQt5.Qt import QApplication
-    from calibre.gui2.preferences import test_widget
-    app = QApplication([])
-    test_widget('Advanced', 'Plugins')

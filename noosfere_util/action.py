@@ -166,7 +166,7 @@ class InterfacePlugin(InterfaceAction):
                 prints("set_ok", set_ok)
             if not more: break
 
-        if DEBUG: prints('Updated the metadata in the files of {} book(s) out of {}'.format(nbr_ok, len(ids)))
+        if DEBUG: prints('nfsr_id is recorded, metadata is prepared for {} book(s) out of {}'.format(nbr_ok, len(ids)))
         info_dialog(self.gui, 'nsfr_id: enregistré',
                 'Les metadonées ont été préparées pour {} livre(s) sur {}'.format(nbr_ok, len(ids)),
                 show=True)
@@ -335,15 +335,16 @@ class InterfacePlugin(InterfaceAction):
             mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
             scrbl_dt = mi.publisher
             if scrbl_dt:
-                collection, coll_srl = "",""
+                collection, coll_srl = None, None
                 if "€" in scrbl_dt: scrbl_dt, coll_srl = scrbl_dt.split("€")
                 if "§" in scrbl_dt: scrbl_dt, collection = scrbl_dt.split("§")
-                if DEBUG: prints("collection           : ", collection)
-                if DEBUG: prints("coll_srl             : ", coll_srl)
-                if DEBUG: prints("éditeur (scrbl_dt)   : ", scrbl_dt)
+                if DEBUG:
+                    prints("collection : ", collection) if collection else prints("collection not in publisher")
+                    prints("coll_srl   : ", coll_srl) if coll_srl else prints("coll_srl not in publisher")
+                    prints("éditeur (scrbl_dt)   : ", scrbl_dt)
               # Set the current metadata of interest for this book in the db
-                db.set_field("#collection", {book_id: collection})
-                db.set_field("#coll_srl", {book_id: coll_srl})
+                if collection: db.set_field("#collection", {book_id: collection})
+                if coll_srl: db.set_field("#coll_srl", {book_id: coll_srl})
                 db.set_field("publisher", {book_id: scrbl_dt})
                 self.gui.iactions['Edit Metadata'].refresh_gui([book_id])
 
@@ -354,7 +355,7 @@ class InterfacePlugin(InterfaceAction):
     def testtesttest(self):
         if DEBUG: prints("in testtesttest")
         from calibre_plugins.noosfere_util.config import prefs
-        prints("prefs", prefs)
+        prints("in testtesttest; prefs", prefs)
 
         # Get currently selected books
         rows = self.gui.library_view.selectionModel().selectedRows()
@@ -466,5 +467,4 @@ class InterfacePlugin(InterfaceAction):
         # do something based on the settings in prefs
         if DEBUG: prints("in apply_settings")
         if DEBUG: prints("prefs", prefs)        # prefs is a dict {}
-        prints("prefs", prefs)
         prefs

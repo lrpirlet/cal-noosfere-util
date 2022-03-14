@@ -15,7 +15,7 @@ class SelectItems(QWidget):
         """
         Initialize the window and display its contents to the screen
         """
-        # self.setGeometry(100, 100, 300, 200)
+        self.setGeometry(100, 100, 300, 200)
         # self.setWindowTitle('ComboBox and SpinBox')
         self.columns_name()
         self.show()

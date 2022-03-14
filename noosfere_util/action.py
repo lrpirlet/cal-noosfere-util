@@ -13,6 +13,7 @@ from calibre.gui2.actions import InterfaceAction, menu_action_unique_name
 from calibre.utils.config import config_dir
 from calibre.utils.date import UNDEFINED_DATE
 
+
 #from calibre_plugins.noosfere_util.main import NoosfereUtilDialog
 #from calibre_plugins.noosfere_util.common_utils import (create_menu_action_unique)
 
@@ -118,7 +119,7 @@ class InterfacePlugin(InterfaceAction):
         self.menu.addSeparator()
 
         create_menu_action_unique(self, self.menu, _("Personnalise l'extension")+'...', 'blue_icon/config.png',
-                                  triggered=self.show_configuration)
+                                  triggered=self.set_configuration)
         self.menu.addSeparator()
 
         create_menu_action_unique(self, self.menu, _('Help'), 'blue_icon/documentation.png',
@@ -432,12 +433,12 @@ class InterfacePlugin(InterfaceAction):
                 'Updated the metadata in the files of {} book(s)'.format(len(ids)),
                 show=True)
 
-    def show_configuration(self):
+    def set_configuration(self):
         '''
         will present the configuration widget... should handle custom columns needed for
         #collection and #coll_srl
         '''
-        if DEBUG: prints("in show_configuration")
+        if DEBUG: prints("in set_configuration")
 
         self.interface_action_base_plugin.do_user_config(self.gui)
 

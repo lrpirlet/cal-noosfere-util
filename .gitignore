@@ -2,6 +2,7 @@
 junk/*
 .vscode/*
 todo.txt
+junk*.*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -139,4 +140,4 @@ dmypy.json
 .pyre/
 
 # pytype static type analyzer
-.pytype/                             
+.pytype/

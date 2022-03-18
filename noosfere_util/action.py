@@ -4,16 +4,17 @@
 __license__   = 'GPL v3'
 __copyright__ = '2021, Louis Richard Pirlet'
 
+from pickle import FALSE
 from typing import Collection
 from calibre import prints
 from calibre.constants import DEBUG
-from calibre.ebooks.metadata.meta import set_metadata
+# from calibre.ebooks.metadata.meta import set_metadata
 from calibre.gui2 import open_url, error_dialog, info_dialog
 from calibre.gui2.actions import InterfaceAction, menu_action_unique_name
-from calibre.utils.config import config_dir
+# from calibre.utils.config import config_dir
 from calibre.utils.date import UNDEFINED_DATE
 
-
+from calibre_plugins.noosfere_util.config import prefs
 #from calibre_plugins.noosfere_util.main import NoosfereUtilDialog
 #from calibre_plugins.noosfere_util.common_utils import (create_menu_action_unique)
 
@@ -100,8 +101,12 @@ class InterfacePlugin(InterfaceAction):
         icon = get_icons('blue_icon/top_icon.png')
       # qaction is created and made available by calibre for noosfere_util
         self.qaction.setIcon(icon)
+      # load the prefs so that they are available
+        self.collection_name = prefs["COLLECTION_NAME"]
+        self.coll_srl_name = prefs["COLL_SRL_NAME"]
       # here we create a menu in calibre
         self.build_menus()
+
 
     def build_menus(self):
         self.menu = QMenu(self.gui)
@@ -126,9 +131,9 @@ class InterfacePlugin(InterfaceAction):
                                   triggered=self.show_help)
         create_menu_action_unique(self, self.menu, _('About'), 'blue_icon/about.png',
                                   triggered=self.about)
-        self.menu.addSeparator()
-        create_menu_action_unique(self, self.menu, _('testtesttest'), 'blue_icon/top_icon.png',
-                                  triggered=self.testtesttest)
+        # self.menu.addSeparator()
+        # create_menu_action_unique(self, self.menu, _('testtesttest'), 'blue_icon/top_icon.png',
+        #                           triggered=self.testtesttest)
 
         self.gui.keyboard.finalize()
 
@@ -247,10 +252,10 @@ class InterfacePlugin(InterfaceAction):
             mi.set_identifier('isbn', "")
             if cstm_coll_srl_fm:
                 cstm_coll_srl_fm["#value#"] = ""
-                mi.set_user_metadata("#coll_srl",cstm_coll_srl_fm)
+                mi.set_user_metadata(self.coll_srl_name, cstm_coll_srl_fm)
             if cstm_collection_fm:
                 cstm_collection_fm["#value#"] = ""
-                mi.set_user_metadata("#collection",cstm_collection_fm)
+                mi.set_user_metadata(self.collection_name, cstm_collection_fm)
 
             # commit the change, force reset of the above fields, leave the others alone
             db.set_metadata(book_id, mi, force_changes=True)
@@ -271,9 +276,10 @@ class InterfacePlugin(InterfaceAction):
     def wipe_selected_metadata(self):
         '''
         For all selected book
-        Deletes publisher, tags, series, rating, #coll_srl, #collection, and any ID
-        except ISBN. All other fields are supposed to be overwritten when new matadata
-        is downloaded from noosfere. ISBN will be wiped when nsfr_id is written later.
+        Deletes publisher, tags, series, rating, self.coll_srl_name (#coll_srl),
+        self.collection_name (#collection), and any ID except ISBN. All other fields are supposed
+        to be overwritten when new matadata is downloaded from noosfere.
+        Later, ISBN will be wiped just before nsfr_id (and maybe ISBN) is written.
         '''
         if DEBUG: prints("in wipe_selected_metadata")
 
@@ -306,10 +312,10 @@ class InterfacePlugin(InterfaceAction):
             mi.set_identifier('nsfr_id', "")
             if cstm_coll_srl_fm:
                 cstm_coll_srl_fm["#value#"] = ""
-                mi.set_user_metadata("#coll_srl",cstm_coll_srl_fm)
+                mi.set_user_metadata(self.coll_srl_name, cstm_coll_srl_fm)
             if cstm_collection_fm:
                 cstm_collection_fm["#value#"] = ""
-                mi.set_user_metadata("#collection",cstm_collection_fm)
+                mi.set_user_metadata(self.collection_name, cstm_collection_fm)
             # commit changes
             db.set_metadata(book_id, mi, force_changes=True)
 
@@ -321,6 +327,9 @@ class InterfacePlugin(InterfaceAction):
 
     def unscramble_publisher(self):
         if DEBUG: prints("in unscramble_publisher")
+      # check for presence of needed column
+        if not self.test_for_column():
+            return
       # Get currently selected books
         rows = self.gui.library_view.selectionModel().selectedRows()
         if not rows or len(rows) == 0:
@@ -344,8 +353,8 @@ class InterfacePlugin(InterfaceAction):
                     prints("coll_srl   : ", coll_srl) if coll_srl else prints("coll_srl not in publisher")
                     prints("éditeur (scrbl_dt)   : ", scrbl_dt)
               # Set the current metadata of interest for this book in the db
-                if collection: db.set_field("#collection", {book_id: collection})
-                if coll_srl: db.set_field("#coll_srl", {book_id: coll_srl})
+                if collection: db.set_field(self.collection_name, {book_id: collection})
+                if coll_srl: db.set_field(self.coll_srl_name, {book_id: coll_srl})
                 db.set_field("publisher", {book_id: scrbl_dt})
                 self.gui.iactions['Edit Metadata'].refresh_gui([book_id])
 
@@ -353,10 +362,31 @@ class InterfacePlugin(InterfaceAction):
                 "L'informationa été distribuée pour {} livre(s)".format(len(ids)),
                 show=True)
 
+    def test_for_column(self):
+        if DEBUG:
+            prints("in test_for_column")
+            prints("recorded self.collection_name", self.collection_name)
+            prints("recorded self.coll_srl_name", self.coll_srl_name)
+
+        custom_columns = self.gui.library_view.model().custom_columns
+        all_custom_col = []
+        for key, column in custom_columns.items(): all_custom_col.append(key)
+        if DEBUG: prints("all_custom_col :", all_custom_col)
+        if (self.collection_name and self.coll_srl_name) not in all_custom_col:
+            prints("Houston, we have a problem...")
+            info_dialog(self.gui, 'Colonne inexistante',
+                "<p> L'une ou l'autre colonne n'existe pas... Veuillez y remédier.</p>"
+                "<p> On peut utiliser <strong>noosfere_util</strong>, pour <strong>personnaliser l'extention</strong>.</p>",
+                show=True)
+            return False
+        return True
+
     def testtesttest(self):
         if DEBUG: prints("in testtesttest")
-        from calibre_plugins.noosfere_util.config import prefs
-        prints("in testtesttest; prefs", prefs)
+        # from calibre_plugins.noosfere_util.config import prefs
+
+        prints("in testtesttest; self.collection_name", self.collection_name)
+        prints("in testtesttest; self.coll_srl_name", self.coll_srl_name)
 
         # Get currently selected books
         rows = self.gui.library_view.selectionModel().selectedRows()
@@ -411,8 +441,8 @@ class InterfacePlugin(InterfaceAction):
                 if "collection" in display_name : cstm_collection_fm=fm
 
             prints(20*"+-")
-            prints("#coll_srl           : ", db.field_for('#coll_srl', book_id))
-            prints("#collection         : ", db.field_for('#collection', book_id))
+            prints("self.coll_srl_name    : ", db.field_for(self.coll_srl_name, book_id))
+            prints("self.collection_name  : ", db.field_for(self.collection_name, book_id))
 
             mi.publisher=""
             mi.series=""
@@ -421,10 +451,10 @@ class InterfacePlugin(InterfaceAction):
 
             if cstm_coll_srl_fm:
                 cstm_coll_srl_fm["#value#"] = ""
-                mi.set_user_metadata("#coll_srl",cstm_coll_srl_fm)
+                mi.set_user_metadata(self.coll_srl_name, cstm_coll_srl_fm)
             if cstm_collection_fm:
                 cstm_collection_fm["#value#"] = ""
-                mi.set_user_metadata("#collection",cstm_collection_fm)
+                mi.set_user_metadata(self.collection_name, cstm_collection_fm)
 
             # db.set_metadata(book_id, mi, force_changes=True)
 
@@ -436,7 +466,7 @@ class InterfacePlugin(InterfaceAction):
     def set_configuration(self):
         '''
         will present the configuration widget... should handle custom columns needed for
-        #collection and #coll_srl
+        self.collection_name (#collection) and self.coll_srl_name (#coll_srl).
         '''
         if DEBUG: prints("in set_configuration")
 
@@ -467,5 +497,6 @@ class InterfacePlugin(InterfaceAction):
         # In an actual non trivial plugin, you would probably need to
         # do something based on the settings in prefs
         if DEBUG: prints("in apply_settings")
-        if DEBUG: prints("prefs", prefs)        # prefs is a dict {}
+        if DEBUG: prints("prefs['COLLECTION_NAME'] : ", prefs['COLLECTION_NAME'])
+        if DEBUG: prints("prefs['COLL_SRL_NAME'] : ", prefs['COLL_SRL_NAME'])
         prefs

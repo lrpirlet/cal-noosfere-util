@@ -6,21 +6,17 @@ __license__   = 'GPL v3'
 __copyright__ = '2021, Louis Richard Pirlet'
 
 # from PyQt5.Qt import QWidget, QHBoxLayout, QLabel, QLineEdit
-from PyQt5.QtWidgets import (QWidget, QLabel, QComboBox, QHBoxLayout, QVBoxLayout, QMessageBox)
+from PyQt5.QtWidgets import (QWidget, QLabel, QComboBox, QHBoxLayout, QVBoxLayout)
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 
 from calibre import prints
 from calibre.constants import DEBUG
+from calibre.gui2 import error_dialog, info_dialog, question_dialog
 from calibre.gui2.ui import get_gui
 from calibre.gui2.preferences.create_custom_column import CreateNewCustomColumn
 from calibre.utils.config import JSONConfig
 
-# This is where all preferences for this plugin will be stored
-# Remember that this name (i.e. plugins/noosfere_util) is also
-# in a global namespace, so make it as unique as possible.
-# You should always prefix your config file name with plugins/,
-# so as to ensure you dont accidentally clobber a calibre config file
 prefs = JSONConfig('plugins/noosfere_util')
 
 # Set defaults
@@ -48,6 +44,8 @@ class ConfigWidget(QWidget):
 
         self.pertinent_collection_list.extend(["", "Ajouter et sélectionner une colonne"])
         self.pertinent_coll_srl_list.extend(["", "Ajouter et sélectionner une colonne"])
+
+        self.gui = get_gui()
 
         self.setGeometry(100, 100, 300, 200)
 
@@ -78,19 +76,19 @@ class ConfigWidget(QWidget):
         """
         Create the widgets so users can select or create a column from the combo boxes
         """
-        info_label = QLabel("Sélectionne les colonnes pour l'information surchargée éditeur")
+        info_label = QLabel("Sélectionne les colonnes pour répartir l'information surchargée dans Editeur")
         info_label.setFont(QFont('Arial', 12))
         info_label.setAlignment(Qt.AlignCenter)
         info_label.setToolTip("En selectionnant la creation de colonne on redémare calibre. Ensuite, apres le redémarage, on poura selectionner une colonne valide.")
 
-        label_collection = QLabel("#collection name")
+        label_collection = QLabel("Nom de la collection par l'éditeur")
         label_collection.setToolTip("La colonne présentée est celle actuellement selectionnée.")
         self.name_collection = QComboBox(self)
         self.name_collection.addItems(self.pertinent_collection_list)
         self.name_collection.setCurrentIndex(self.name_collection.findText(self.current_collection_name,Qt.MatchFixedString))
         self.name_collection.activated[str].connect(self.select_for_collection)
 
-        label_coll_srl = QLabel("#coll_srl name")
+        label_coll_srl = QLabel("Numero d'ordre dans la collection par l'éditeur")
         self.name_coll_srl = QComboBox(self)
         label_coll_srl.setToolTip("La colonne présentée est celle actuellement selectionnée.")
         self.name_coll_srl.addItems(self.pertinent_coll_srl_list)
@@ -113,46 +111,28 @@ class ConfigWidget(QWidget):
         self.setLayout(v_box)
 
     def select_for_collection(self, name):
-        new_name=None
         if name == "Ajouter et sélectionner une colonne":
-            allow_restart = QMessageBox.question(self, 'On devra redémarer calibre',
-                    "Cette action va céer une colonne valide pour contenir la collection definie par l'editeur dont fait partie le volume. "
-                    "Elle pourra etre selectionée apres le redémarage...\n"
-                    "On crée la colonne?",
-                        QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
-            if allow_restart == QMessageBox.Yes:
+            allow_restart = question_dialog(self.gui, 'On devra redémarer calibre',
+                "<p>Cette action va céer une colonne valide pour contenir la collection definie par l'editeur dont fait partie le volume.<p>"
+                "<p>Elle pourra etre selectionée apres le redémarage...<p>"
+                "<p>On crée la colonne et on redémare?<p>",
+                show_copy_button=False)
+            if allow_restart :
                 self.create_custom_column(lookup_name = "#collection")
-            # if new_name:
-            #     if DEBUG: prints("ici on adapte le combo box et on choisi new_name : ", new_name)
-            #     self.name_collection.addItems([new_name])
-            #     self.collection_name = new_name
-            #     self.name_collection.setCurrentIndex(self.name_collection.findText(new_name,Qt.MatchFixedString))
-            # else:
-            #     self.collection_name = self.current_collection_name
-            #     self.name_collection.setCurrentIndex(self.name_collection.findText(self.current_collection_name,Qt.MatchFixedString))
         else:
             self.collection_name = name
             self.name_collection.setCurrentIndex(self.name_collection.findText(name,Qt.MatchFixedString))
         if DEBUG: prints("self.collection_name : ", self.collection_name)
 
     def select_for_coll_srl(self, name):
-        new_name=None
         if name == "Ajouter et sélectionner une colonne":
-            allow_restart = QMessageBox.question(self, 'On devra redémarer calibre',
-                    "Cette action va céer une colonne valide pour contenir le code de série dans la collection de l'éditeur. "
-                    "Elle pourra etre selectionée apres le redémarage...\n"
-                    "On crée la colonne?",
-                        QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
-            if allow_restart == QMessageBox.Yes:
+            allow_restart = question_dialog(self.gui, 'On devra redémarer calibre',
+                "<p>Cette action va céer une colonne valide pour contenir le code de série dans la collection de l'éditeur.<p>"
+                "<p>Elle pourra etre selectionée apres le redémarage...<p>"
+                "<p>On crée la colonne et on redémare?<p>",
+                show_copy_button=False)
+            if allow_restart :
                 self.create_custom_column(lookup_name = "#coll_srl")
-            # if new_name:
-            #     if DEBUG: prints("ici on adapte le combo box et on choisi new_name : ", new_name)
-            #     self.name_coll_srl.addItems([new_name])
-            #     self.coll_srl_name = new_name
-            #     self.name_coll_srl.setCurrentIndex(self.name_coll_srl.findText(new_name,Qt.MatchFixedString))
-            # else:
-            #     self.coll_srl_name = name
-            #     self.name_coll_srl.setCurrentIndex(self.name_coll_srl.findText(self.current_coll_srl_name,Qt.MatchFixedString))
         else:
             self.coll_srl_name = name
             self.name_coll_srl.setCurrentIndex(self.name_coll_srl.findText(name,Qt.MatchFixedString))
@@ -169,36 +149,39 @@ class ConfigWidget(QWidget):
             display_params =   {'description': "Le code de série dans la collection de l'éditeur", 'heading_position': 'hide', 'interpret_as': 'short-text'}
             datatype = "comments"
             column_heading  = "coll_srl"
-        new_lookup_name = lookup_name
 
         creator = CreateNewCustomColumn(get_gui())
-        if DEBUG:
-            prints("creator : ", creator)
-            prints("type(creator) : ", type(creator))
         if creator.must_restart():
-            restart = QMessageBox.question(self, 'Désolé, faut redémarer calibre avant de continuer',
-                                "Aucune modification ne peut plus etre actée... "
-                                "Redémarer maintenant, avant de créer une autre colonne ?",
-                                    QMessageBox.Abort | QMessageBox.Yes, QMessageBox.Yes)
-            if restart == QMessageBox.Yes:
+            restart = question_dialog(self.gui, 'Désolé, calibre doit redémarer pour procéder',
+                "<p>Aucune modification ne peut plus etre actée...<p>"
+                "<p>Faut-il redémarer maintenant, avant de créer une autre colonne ? <p>",
+                show_copy_button=False)
+            if restart :
                 self.save_settings
                 get_gui().quit(restart=True)
             else:
                 return ""
 
-        result = creator.create_column(new_lookup_name, column_heading, datatype, False, display=display_params, generate_unused_lookup_name=True, freeze_lookup_name=False)
+        result = creator.create_column(lookup_name, column_heading, datatype, False, display=display_params, generate_unused_lookup_name=True, freeze_lookup_name=False)
         if DEBUG: prints("result : ", result)
         if result[0] == CreateNewCustomColumn.Result.COLUMN_ADDED:
             get_gui().quit(restart=True)
-            # return result[1]
         return ""
 
-
-
     def save_settings(self):
-        if DEBUG: prints("in save_settings")
+        if DEBUG: prints("******************************************in save_settings")
         if DEBUG: prints("self.collection_name : ", self.collection_name)
         if DEBUG: prints("self.coll_srl_name : ", self.coll_srl_name)
 
         prefs["COLLECTION_NAME"] = self.collection_name
         prefs["COLL_SRL_NAME"] = self.coll_srl_name
+
+        allow_restart = question_dialog(self.gui, 'calibre devrait redémarer',
+                "<p>Pour etre pris en consideration, ce choix de colonne(s) impose un redémarage...<p>"
+                "<p>Attention, repasser par la personnalisation de noosfere risque de changer le choix.<p>"
+                "<p>On redémare maintenant?<p>",
+                show_copy_button=False)
+        if allow_restart :
+                get_gui().quit(restart=True)
+
+

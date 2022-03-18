@@ -1,6 +1,6 @@
-from PyQt5.QtCore import pyqtSlot, qDebug, QUrl, QSize, Qt
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QToolBar, QAction, QLineEdit,
-                                QStatusBar, QMessageBox, qApp, QWidget, QVBoxLayout,
+from PyQt5.QtCore import pyqtSlot, qDebug, QUrl, QSize, Qt, QTimer
+from PyQt5.QtWidgets import (QMainWindow, QApplication, QToolBar, QAction, QLineEdit, QProgressBar,
+                                QStatusBar, QMessageBox, qApp, QWidget, QVBoxLayout, QLabel,
                                 QHBoxLayout, QPushButton, QShortcut, QDockWidget)
 from PyQt5.QtGui import QIcon, QKeySequence
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
@@ -41,8 +41,11 @@ class MainWindow(QMainWindow):
         self.browser.urlChanged.connect(self.srch_dsp.clear)
         self.browser.urlChanged.connect(self.search_dock.hide)
         self.browser.loadStarted.connect(self.loading_title)
-        self.browser.loadProgress.connect(self.reloading_title)
+        self.browser.loadStarted.connect(self.set_progress_bar)
+        # self.browser.loadProgress.connect(self.reloading_title)
+        self.browser.loadProgress.connect(self.update_progress_bar)
         self.browser.loadFinished.connect(self.update_title)
+        self.browser.loadFinished.connect(self.reset_progress_bar)
         self.search_dock.visibilityChanged.connect(self.srch_dsp.clear)
         self.isbn_btn.clicked.connect(partial(self.set_noosearch_page, "isbn"))
         self.auteurs_btn.clicked.connect(partial(self.set_noosearch_page, "auteurs"))
@@ -208,8 +211,13 @@ class MainWindow(QMainWindow):
         exit_btn.triggered.connect(self.select_and_exit)
         nav_tb.addAction(exit_btn)
 
-        #self.setStatusBar(QStatusBar(self))
+  # set status bar
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
 
+  # Create page loading progress bar that is displayed in the status bar.
+        self.page_load_pb = QProgressBar()
+        self.page_load_label = QLabel()
 
  # search action
     @pyqtSlot()
@@ -240,7 +248,7 @@ class MainWindow(QMainWindow):
                 self.browser.page().runJavaScript("document.getElementsByName('auteurs')[0].checked = false")
         else:
             pass
-    
+
     @pyqtSlot()
     def find_selected(self, iam):
         self.search_dock.show()
@@ -268,13 +276,29 @@ class MainWindow(QMainWindow):
         title="En téléchargement de l'url"
         self.setWindowTitle(title)
 
-    def reloading_title(self,i):
-        title="En téléchargement de l'url "+i*"°"
-        self.setWindowTitle(title)
+    # def reloading_title(self,i):
+    #     title="En téléchargement de l'url "+i*"°"
+    #     self.setWindowTitle(title)
 
     def update_title(self):
         title = self.browser.page().title()
         self.setWindowTitle(title)
+
+    def set_progress_bar(self):
+        self.page_load_pb.setVisible(True)
+        self.page_load_label.setVisible(True)
+        self.status_bar.addWidget(self.page_load_pb)
+        self.status_bar.addWidget(self.page_load_label)
+
+    def update_progress_bar(self, progress):
+        self.page_load_pb.setValue(progress)
+        self.page_load_label.setText("En téléchargement de l'url... ({}/100)".format(str(progress)))
+
+    def reset_progress_bar(self):
+        def wait_a_minut():
+            self.status_bar.removeWidget(self.page_load_pb)
+            self.status_bar.removeWidget(self.page_load_label)
+        QTimer.singleShot(500, wait_a_minut)
 
     def select_and_exit(self):                    #sent response over the clipboard then exit this book
         self.srch_dsp.clear()

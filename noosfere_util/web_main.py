@@ -4,10 +4,10 @@
 __license__   = 'GPL v3'
 __copyright__ = '2022, Louis Richard Pirlet'
 
-from PyQt5.QtCore import pyqtSlot, QUrl, QSize, Qt, pyqtSignal
-from PyQt5.QtWidgets import (QMainWindow, QToolBar, QAction, QLineEdit, QStatusBar,
-                                QMessageBox, qApp, QWidget, QVBoxLayout, QHBoxLayout,
-                                QPushButton, QShortcut)   #, QApplication, QDockWidget)
+from PyQt5.QtCore import pyqtSlot, QUrl, QSize, Qt, pyqtSignal, QTimer
+from PyQt5.QtWidgets import (QMainWindow, QToolBar, QAction, QLineEdit, QStatusBar, QProgressBar,
+                                QMessageBox, qApp, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+                                QPushButton, QShortcut)
 from PyQt5.QtGui import QIcon, QKeySequence
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 
@@ -64,7 +64,6 @@ class Search_Panel(QWidget):
 
         self.srch_dsp = QLineEdit()
         self.srch_dsp.setToolTip(" Cette boite contient le texte à chercher dans la page")
-        if isinstance(self.srch_dsp, QPushButton): self.srch_dsp.clicked.connect(self.setFocus)
         self.setFocusProxy(self.srch_dsp)
         self.srch_dsp.textChanged.connect(self.update_searching)
         self.srch_dsp.returnPressed.connect(self.update_searching)
@@ -107,7 +106,21 @@ class MainWindow(QMainWindow):
     def __init__(self, data):
         super().__init__()
 
-        # data = [url, isbn, auteurs, titre]
+      # Initialize environment..
+      # note: web_main is NOT supposed to output anything over STDOUT or STDERR
+        logging.basicConfig(
+        level = logging.DEBUG,
+        format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s',
+        filename = os.path.join(tempfile.gettempdir(), 'nsfr_utl-web_main.log'),
+        filemode = 'a')
+        stdout_logger = logging.getLogger('STDOUT')
+        sl = StreamToLogger(stdout_logger, logging.INFO)
+        sys.stdout = sl
+        stderr_logger = logging.getLogger('STDERR')
+        sl = StreamToLogger(stderr_logger, logging.ERROR)
+        sys.stderr = sl
+
+      # data = [url, isbn, auteurs, titre]
         self.isbn, self.auteurs, self.titre = data[1].replace("-",""), data[2], data[3]
 
         self.set_browser()
@@ -126,19 +139,23 @@ class MainWindow(QMainWindow):
       # signals
         self.browser.urlChanged.connect(self.update_urlbar)
         self.browser.loadStarted.connect(self.loading_title)
-        self.browser.loadProgress.connect(self.reloading_title)
+        self.browser.loadStarted.connect(self.set_progress_bar)
+        self.browser.loadProgress.connect(self.update_progress_bar)
         self.browser.loadFinished.connect(self.update_title)
+        self.browser.loadFinished.connect(self.reset_progress_bar)
         self.isbn_btn.clicked.connect(partial(self.set_noosearch_page, "isbn"))
         self.auteurs_btn.clicked.connect(partial(self.set_noosearch_page, "auteurs"))
         self.titre_btn.clicked.connect(partial(self.set_noosearch_page, "titre"))
 
       # browser
     def set_browser(self):
+        print("in set_browser")
         self.browser = QWebEngineView()
         self.browser.setUrl(QUrl("http://www.google.com"))
 
       # info boxes
-    def set_isbn_box(self):                     # info boxes isbn
+    def set_isbn_box(self):        # info boxes isbn
+        print("in set_isbn_box")
         self.isbn_btn = QPushButton(" ISBN ", self)
         self.isbn_btn.setToolTip('Action sur la page noosfere initiale: "Mots-clefs à rechercher" = ISBN, coche la case "Livre".')
                                    # Action on home page: "Mots-clefs à rechercher" = ISBN, set checkbox "Livre".
@@ -153,6 +170,7 @@ class MainWindow(QMainWindow):
         self.isbn_lt.addWidget(self.isbn_dsp)
 
     def set_auteurs_box(self):                  # info boxes auteurs
+        print("in set_auteurs_box")
         self.auteurs_btn = QPushButton("Auteur(s)", self)
         self.auteurs_btn.setToolTip('Action sur la page noosfere initiale: "Mots-clefs à rechercher" = Auteur(s), coche la case "Auteurs".')
                                       # Action on home page: "Mots-clefs à rechercher" = Auteur(s), set checkbox "Auteurs".
@@ -166,6 +184,7 @@ class MainWindow(QMainWindow):
         self.auteurs_lt.addWidget(self.auteurs_dsp)
 
     def set_titre_box(self):                    # info boxes titre
+        print("in set_titre_box")
         self.titre_btn = QPushButton("Titre", self)
         self.titre_btn.setToolTip('Action sur la page noosfere initiale: "Mots-clefs à rechercher" = Titre, coche la case "Livres".')
                                     # Action on home page: "Mots-clefs à rechercher" = Titre, set checkbox "Livres".
@@ -180,6 +199,7 @@ class MainWindow(QMainWindow):
 
   # search bar hidden when inactive ready to find something (I hope :-) )
     def set_search_bar(self):
+        print("in set_search_bar")
         self.search_pnl = Search_Panel()
         self.search_toolbar = QToolBar()
         self.search_toolbar.addWidget(self.search_pnl)
@@ -189,6 +209,7 @@ class MainWindow(QMainWindow):
         self.search_pnl.closed.connect(self.search_toolbar.hide)
 
     def join_all_boxes(self):                   # put all that together, center, size and make it central widget
+        print("in join_all_boxes")
         layout = QVBoxLayout()
         layout.addWidget(self.browser)
         layout.addLayout(self.isbn_lt)
@@ -203,6 +224,7 @@ class MainWindow(QMainWindow):
 
       # set navigation toolbar
     def set_nav_and_status_bar(self) :
+        print("in set_nav_and_status_bar")
         nav_tb = QToolBar("Navigation")
         nav_tb.setIconSize(QSize(24,24))
         self.addToolBar(nav_tb)
@@ -261,22 +283,37 @@ class MainWindow(QMainWindow):
         nav_tb.addAction(exit_btn)
 
   # set status bar
-        self.setStatusBar(QStatusBar(self))
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+  # Create page loading progress bar that is displayed in the status bar.
+        self.msg_label = QLabel()
+        self.page_load_label = QLabel()
+        self.page_load_pb = QProgressBar()
+  # Set up widgets on the statusbar
+        self.statusBar().addPermanentWidget(self.msg_label, stretch=36)
+        self.statusBar().addPermanentWidget(self.page_load_label, stretch=14)
+        self.statusBar().addPermanentWidget(self.page_load_pb, stretch=50)
 
   # search action
     @pyqtSlot(str, QWebEnginePage.FindFlag)
     def on_searched(self, text, flag):
+        print("in on_searched text : {}, flag : {}".format(text, flag))
         def callback(found):
             if text and not found:
-                self.statusBar().show()
-                self.statusBar().showMessage('Not found')
+
+                # self.statusBar().show()
+                # self.msg_label.setVisible(True)
+                # self.status_bar.addWidget(self.msg_label)
+                self.msg_label.setText('Désolé, {} pas trouvé...'.format(text))
             else:
-                self.statusBar().hide()
+                # self.status_bar.removeWidget(self.msg_label)
+                self.msg_label.setText('')
         self.browser.findText(text, flag, callback)
 
   # info boxes actions
     @pyqtSlot()
     def set_noosearch_page(self, iam):
+        print("in set_noosearch_page iam : {}".format(iam))
         if self.urlbox.text() == "https://www.noosfere.org/livres/noosearch.asp":
             if iam == "isbn": val = self.isbn
             elif iam == "auteurs": val = self.auteurs
@@ -293,42 +330,75 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def wake_search_panel(self):
+        print("in wake_search_panel")
         self.search_toolbar.show()
 
   # Navigation actions
     def initial_url(self, url="http://www.google.com"):
+        print("in initial_url url : {}".format(url))
         self.browser.setUrl(QUrl(url))
 
     def navigate_home(self):
+        print("in navigate_home")
         self.browser.setUrl(QUrl("https://www.noosfere.org/livres/noosearch.asp"))
 
     def navigate_to_url(self):                    # Does not receive the Url
+        print("in navigate_to_url")
         q = QUrl(self.urlbox.text())
         self.browser.setUrl(q)
 
     def update_urlbar(self, q):
+        print("in update_urlbar")
         self.urlbox.setText(q.toString())
         self.urlbox.setCursorPosition(0)
 
     def loading_title(self):
+        print("in loading_title")
+      # anytime we change page we come here... let's clear and hide the search bar message
+        self.search_pnl.closed.emit()
+      # before doubling indication that we load a page in the title
         title="En téléchargement de l'url"
         self.setWindowTitle(title)
 
-    def reloading_title(self,i):
-        title="En téléchargement de l'url "+i*"°"
-        self.setWindowTitle(title)
-
     def update_title(self):
+        print("in update_title")
         title = self.browser.page().title()
         self.setWindowTitle(title)
 
     def report_returned_id(self, returned_id):
-        tfp=open(os.path.join(tempfile.gettempdir(),"report_returned_id"),"w")
-        tfp.write(returned_id)
-        tfp.close
+        print("in report_returned_id returned_id : {}".format(returned_id))
+        report_tpf=open(os.path.join(tempfile.gettempdir(),"report_returned_id"),"w")
+        report_tpf.write(returned_id)
+        report_tpf.close
+
+    def set_progress_bar(self):
+        print("in set_progress_bar")
+        self.page_load_pb.show()
+        self.page_load_label.show()
+        # self.page_load_pb.setVisible(True)
+        # self.page_load_label.setVisible(True)
+        # self.status_bar.addWidget(self.page_load_pb)
+        # self.status_bar.addWidget(self.page_load_label)
+
+    def update_progress_bar(self, progress):
+        print("in update_progress_bar progress : {}".format(progress))
+        self.page_load_pb.setValue(progress)
+        self.page_load_label.setText("En téléchargement de l'url... ({}/100)".format(str(progress)))
+
+    def reset_progress_bar(self):
+        print("in reset_progress_bar")
+        def wait_a_minut():
+            self.page_load_pb.hide()
+            self.page_load_label.hide()
+            # self.status_bar.removeWidget(self.page_load_pb)
+            # self.status_bar.removeWidget(self.page_load_label)
+        QTimer.singleShot(1000, wait_a_minut)
+        # self.status_bar.removeWidget(self.page_load_pb)
+        # self.status_bar.removeWidget(self.page_load_label)
 
     def select_and_exit(self):                    # sent response over report_returned_id file in temp dir
       # create a temp file with name starting with nsfr_id
+        print("in select_and_exit")
         choosen_url = self.urlbox.text()
         if "numlivre=" in choosen_url:
             print('choosen_url : ',choosen_url)
@@ -341,6 +411,7 @@ class MainWindow(QMainWindow):
         qApp.quit()     # exit application...
 
     def abort_book(self):
+        print("in abort_book")
         reply = QMessageBox.question(self, 'Certain', "Oublier ce livre et passer au suivant", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
             print("WebEngineView was aborted: aborted")
@@ -349,6 +420,7 @@ class MainWindow(QMainWindow):
 
 
     def closeEvent(self, event):                  # abort hit window exit "X" button
+        print("in closeEvent event : {}".format(event))
         reply = QMessageBox.question(self, 'Vraiment', "Quitter et ne plus rien changer", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
             event.accept()
@@ -361,26 +433,8 @@ class MainWindow(QMainWindow):
 
 def main(data):
 
-    # Initialize environment..
-    # note: web_main is NOT supposed to output anything over STDOUT or STDERR
-
-    logging.basicConfig(
-    level = logging.DEBUG,
-    format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s',
-    filename = os.path.join(tempfile.gettempdir(), 'nsfr_utl-web_main.log'),
-    filemode = 'a')
-
-    stdout_logger = logging.getLogger('STDOUT')
-    sl = StreamToLogger(stdout_logger, logging.INFO)
-    sys.stdout = sl
-
-    stderr_logger = logging.getLogger('STDERR')
-    sl = StreamToLogger(stderr_logger, logging.ERROR)
-    sys.stderr = sl
-
     # create a temp file... while it exists launcher program will wait... this file will disappear with the process
-    tfp=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb")
-
+    sync_tpf=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb")
 
     # retrieve component from data
     #        data = [url, isbn, auteurs, titre]
@@ -392,12 +446,12 @@ def main(data):
     app.exec()
 
     # signal launcher program that we are finished
-    tfp.close           # close temp file
+    sync_tpf.close           # close temp file
 
 
 if __name__ == '__main__':
     '''
-    watch out name 'get_icons' is not defined, and can't be defined really...
+    watch out name 'get_icons' is not defined, and can't be defined easyly...
     workaround, swap it with QIcon + path to icon
     '''
     url = "https://www.noosfere.org/livres/noosearch.asp"   # jump directly to noosfere advanced search page
@@ -407,9 +461,9 @@ if __name__ == '__main__':
     data = [url, isbn, auteurs, titre]
     main(data)
 
-    tpf = open(os.path.join(tempfile.gettempdir(),"report_returned_id"), "r")
-    returned_id = tpf.read()
-    tpf.close()
+    tf = open(os.path.join(tempfile.gettempdir(),"report_returned_id"), "r")
+    returned_id = tf.read()
+    tf.close()
 
   # from here should modify the metadata, or not.
     if returned_id.replace("vl$","").replace("-","").isnumeric():

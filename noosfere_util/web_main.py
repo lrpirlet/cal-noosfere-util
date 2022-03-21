@@ -15,7 +15,7 @@ from calibre.gui2 import Application
 
 from json import dumps
 from functools import partial
-import tempfile, os, sys, logging, contextlib, glob
+import tempfile, os, sys, logging
 
 
 class StreamToLogger(object):
@@ -43,17 +43,13 @@ class Search_Panel(QWidget):
     def __init__(self,parent=None):
         super(Search_Panel,self).__init__(parent)
 
-        # self.case_btn = QPushButton('Match &Case', checkable=True)
-        # self.case_btn.clicked.connect(self.update_searching)
-        # if isinstance(self.case_btn, QPushButton): self.case_btn.clicked.connect(self.setFocus)
-
         next_btn = QPushButton('Suivant')
-        next_btn.setToolTip("Ce bouton recherche le prochainne occurence dans la page")
+        next_btn.setToolTip("Ce bouton recherche la prochaine occurrence dans la page")
         next_btn.clicked.connect(self.update_searching)
         if isinstance(next_btn, QPushButton): next_btn.clicked.connect(self.setFocus)
 
         prev_btn = QPushButton('Précédent')
-        prev_btn.setToolTip("Ce bouton recherche l'occurence précédente dans la page")
+        prev_btn.setToolTip("Ce bouton recherche l'occurrence précédente dans la page")
         prev_btn.clicked.connect(self.on_preview_find)
         if isinstance(prev_btn, QPushButton): prev_btn.clicked.connect(self.setFocus)
 
@@ -70,7 +66,6 @@ class Search_Panel(QWidget):
         self.closed.connect(self.srch_dsp.clear)
 
         self.srch_lt = QHBoxLayout(self)
-        # self.srch_lt.addWidget(self.case_btn)
         self.srch_lt.addWidget(self.srch_dsp)
         self.srch_lt.addWidget(next_btn)
         self.srch_lt.addWidget(prev_btn)
@@ -87,8 +82,6 @@ class Search_Panel(QWidget):
     @pyqtSlot()
     def update_searching(self, direction=QWebEnginePage.FindFlag()):
         flag = direction
-        # if self.case_btn.isChecked():
-        #     flag |= QWebEnginePage.FindCaseSensitively
         self.searched.emit(self.srch_dsp.text(), flag)
 
     def showEvent(self, event):
@@ -177,8 +170,8 @@ class MainWindow(QMainWindow):
         self.auteurs_dsp = QLineEdit()
         self.auteurs_dsp.setReadOnly(True)
         self.auteurs_dsp.setText(self.auteurs)
-        self.auteurs_dsp.setToolTip(" Cette boite montre le ou les Auteur(s) protégé en écriture. Du texte peut être sélectionné pour chercher dans la page")
-                                      # This box displays the Author(s) write protected. Some text may be selected here to search the page.
+        self.auteurs_dsp.setToolTip(" Cette boite montre le ou les Auteur(s) protégé(s) en écriture. Du texte peut être manuellement introduit pour chercher dans la page")
+                                      # This box displays the Author(s) write protected. Some text may be written here to search the page.
         self.auteurs_lt = QHBoxLayout()
         self.auteurs_lt.addWidget(self.auteurs_btn)
         self.auteurs_lt.addWidget(self.auteurs_dsp)
@@ -240,7 +233,7 @@ class MainWindow(QMainWindow):
         nav_tb.addAction(next_btn)
 
         reload_btn = QAction(get_icons('blue_icon/reload.png'), "Reload", self)
-        reload_btn.setToolTip("On recharge la page")                              # Reload the page
+        reload_btn.setToolTip("On recharge la page présente")                     # Reload the page
         reload_btn.triggered.connect(self.browser.reload)
         nav_tb.addAction(reload_btn)
 
@@ -257,7 +250,7 @@ class MainWindow(QMainWindow):
         nav_tb.addSeparator()
 
         find_btn = QAction(get_icons('blue_icon/search.png'), "Search", self)
-        find_btn.setToolTip("Ce bouton fait apparaitre la barre de recherche... Z'avez pas vu Mirza? Oh la la la la la. Où est donc passé ce chien. Je le cherche partout...  (Merci Nino Ferrer)")   # Cherche, cherche...
+        find_btn.setToolTip("Ce bouton fait apparaitre la barre de recherche... Z'avez pas vu Mirza? Oh la la la la la. Où est donc passé ce chien. Je le cherche partout...  (Merci Nino Ferrer)")   # search, search...
         find_btn.triggered.connect(self.wake_search_panel)
         find_btn.setShortcut(QKeySequence.Find)
         nav_tb.addAction(find_btn)
@@ -270,8 +263,8 @@ class MainWindow(QMainWindow):
 
         abort_btn = QAction(get_icons('blue_icon/abort.png'), "Abort", self)
         abort_btn.setToolTip("On arrête, on oublie, on ne change rien au livre... au suivant")
-                              # Stop everything, forget everything and change nothing
-        abort_btn.triggered.connect(self.abort_book)             # may need another slot for abort this book , proceed next
+                              # Stop everything, forget everything and change nothing... proceed to next book
+        abort_btn.triggered.connect(self.abort_book)
         nav_tb.addAction(abort_btn)
 
         nav_tb.addSeparator()
@@ -300,13 +293,8 @@ class MainWindow(QMainWindow):
         print("in on_searched text : {}, flag : {}".format(text, flag))
         def callback(found):
             if text and not found:
-
-                # self.statusBar().show()
-                # self.msg_label.setVisible(True)
-                # self.status_bar.addWidget(self.msg_label)
-                self.msg_label.setText('Désolé, {} pas trouvé...'.format(text))
+                self.msg_label.setText('Désolé, {} pas trouvé...'.format(text))     # Sorry "text" not found
             else:
-                # self.status_bar.removeWidget(self.msg_label)
                 self.msg_label.setText('')
         self.browser.findText(text, flag, callback)
 
@@ -342,7 +330,7 @@ class MainWindow(QMainWindow):
         print("in navigate_home")
         self.browser.setUrl(QUrl("https://www.noosfere.org/livres/noosearch.asp"))
 
-    def navigate_to_url(self):                    # Does not receive the Url
+    def navigate_to_url(self):                    # Does not receive the Url, activated when url bar is manually changed
         print("in navigate_to_url")
         q = QUrl(self.urlbox.text())
         self.browser.setUrl(q)
@@ -354,8 +342,8 @@ class MainWindow(QMainWindow):
 
     def loading_title(self):
         print("in loading_title")
-      # anytime we change page we come here... let's clear and hide the search bar message
-        self.search_pnl.closed.emit()
+      # anytime we change page we come here... let's clear and hide the search panel
+        self.search_pnl.closed.emit()           # by sending a close search panel signal
       # before doubling indication that we load a page in the title
         title="En téléchargement de l'url"
         self.setWindowTitle(title)
@@ -367,7 +355,7 @@ class MainWindow(QMainWindow):
 
     def report_returned_id(self, returned_id):
         print("in report_returned_id returned_id : {}".format(returned_id))
-        report_tpf=open(os.path.join(tempfile.gettempdir(),"report_returned_id"),"w")
+        report_tpf=open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"),"w")
         report_tpf.write(returned_id)
         report_tpf.close
 
@@ -375,10 +363,6 @@ class MainWindow(QMainWindow):
         print("in set_progress_bar")
         self.page_load_pb.show()
         self.page_load_label.show()
-        # self.page_load_pb.setVisible(True)
-        # self.page_load_label.setVisible(True)
-        # self.status_bar.addWidget(self.page_load_pb)
-        # self.status_bar.addWidget(self.page_load_label)
 
     def update_progress_bar(self, progress):
         print("in update_progress_bar progress : {}".format(progress))
@@ -390,11 +374,7 @@ class MainWindow(QMainWindow):
         def wait_a_minut():
             self.page_load_pb.hide()
             self.page_load_label.hide()
-            # self.status_bar.removeWidget(self.page_load_pb)
-            # self.status_bar.removeWidget(self.page_load_label)
         QTimer.singleShot(1000, wait_a_minut)
-        # self.status_bar.removeWidget(self.page_load_pb)
-        # self.status_bar.removeWidget(self.page_load_label)
 
     def select_and_exit(self):                    # sent response over report_returned_id file in temp dir
       # create a temp file with name starting with nsfr_id
@@ -410,7 +390,7 @@ class MainWindow(QMainWindow):
             self.report_returned_id("unset")
         qApp.quit()     # exit application...
 
-    def abort_book(self):
+    def abort_book(self):                         # we want to NOT change the book and proceed to the next one
         print("in abort_book")
         reply = QMessageBox.question(self, 'Certain', "Oublier ce livre et passer au suivant", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
@@ -419,7 +399,7 @@ class MainWindow(QMainWindow):
             qApp.quit()     # exit application...
 
 
-    def closeEvent(self, event):                  # abort hit window exit "X" button
+    def closeEvent(self, event):                  # abort hit window exit "X" button we stop processing this and all following books
         print("in closeEvent event : {}".format(event))
         reply = QMessageBox.question(self, 'Vraiment', "Quitter et ne plus rien changer", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
@@ -434,7 +414,7 @@ class MainWindow(QMainWindow):
 def main(data):
 
     # create a temp file... while it exists launcher program will wait... this file will disappear with the process
-    sync_tpf=tempfile.NamedTemporaryFile(prefix="sync-cal-qweb")
+    sync_tpf=tempfile.NamedTemporaryFile(prefix="nsfr_utl_sync-cal-qweb")
 
     # retrieve component from data
     #        data = [url, isbn, auteurs, titre]
@@ -461,7 +441,7 @@ if __name__ == '__main__':
     data = [url, isbn, auteurs, titre]
     main(data)
 
-    tf = open(os.path.join(tempfile.gettempdir(),"report_returned_id"), "r")
+    tf = open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r")
     returned_id = tf.read()
     tf.close()
 

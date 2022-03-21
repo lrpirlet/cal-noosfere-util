@@ -1,6 +1,6 @@
 This plugin should complement cal-noosfere.
 
-Issues in cal-noosfere: 
+Issues in cal-noosfere:
 1 Cal-noosfere CANNOT wipe out a new metadata empty field
   example: if a previous metadata source download, from anywhere, did set the series
   to "something", and noosfere metadata source finds NO series,
@@ -10,8 +10,8 @@ Issues in cal-noosfere:
   with possibly a different author and/or title and/or ISBN. I made some choice but this
   may NOT be the best fit. Solution is to manually go to the book page and chose the best
   volume by setting the nsfr_id, and restarting cal-noosfere metadata source plugin.
-3 Cal-noosfere does not allow modifying customized column, but allosw overloading the 
-  publisher field with the collection and the index of the collection. 
+3 Cal-noosfere does not allow modifying customized column, but allows overloading the
+  publisher field with the collection and the index of the collection.
   It, then, becomes necessary to split this info in custom columns.
 
 Intentions:
@@ -25,16 +25,20 @@ Used as a base for this the experience gathered during a failing attempt to go i
 from within cal-noosfere metadata source plugin.
 
 Worked on a spawned WebEngineView and added a second unique toolbar... (great PyQt5 experience,
-A little bit like fighting mud... you see nothing clearly, find lots of examples, find many docs 
-that looks contradictory till you grasp something that invalidate what you though you 
-understood... anyway, it is still fun for a hobby :-)... I do think sometimes that Mickey mouse 
+A little bit like fighting mud... you see nothing clearly, find lots of examples, find many docs
+that looks contradictory till you grasp something that invalidate what you though you
+understood... anyway, it is still fun for a hobby :-)... I do think sometimes that Mickey mouse
 programming or assembler is easier... )
 
 Spawned process seems to work fine for both data in and data out...
 
-Added a class to allow for a search bar that could be hidden when  not in use... This implied 
+Added a class to allow for a search bar that could be hidden when  not in use... This implied
 creating a signal... that makes calibre to crash before control is passed to remote main...
 I guess I hit a bug or some undocumented restriction...
 
 Added some code to fill the noosfere form (was a lot easier than expected)
 
+Implemented a logging class and redirected output to a log file for the detached
+process web_main.py, now I can see what is wrong and correct it.
+
+I came up with a working config.py that is far from being user friendly...  It works for me, so...

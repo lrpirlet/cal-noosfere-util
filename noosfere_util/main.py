@@ -111,7 +111,7 @@ class InterfacePlugin(InterfaceAction):
     def build_menus(self):
         self.menu = QMenu(self.gui)
         self.menu.clear()
-        create_menu_action_unique(self, self.menu, _('Efface les metadonnées en surplus'), 'blue_icon/wipe_it.png',
+        create_menu_action_unique(self, self.menu, _('Efface les métadonnées en surplus'), 'blue_icon/wipe_it.png',
                                   triggered=self.wipe_selected_metadata)
         self.menu.addSeparator()
 
@@ -131,6 +131,9 @@ class InterfacePlugin(InterfaceAction):
                                   triggered=self.show_help)
         create_menu_action_unique(self, self.menu, _('About'), 'blue_icon/about.png',
                                   triggered=self.about)
+
+      # The following is hidden cause it only allows a developper to navigate the metadata db
+      # there is really no other uses for 'testtesttest'
         # self.menu.addSeparator()
         # create_menu_action_unique(self, self.menu, _('testtesttest'), 'blue_icon/top_icon.png',
         #                           triggered=self.testtesttest)
@@ -151,8 +154,8 @@ class InterfacePlugin(InterfaceAction):
       # Get currently selected books
         rows = self.gui.library_view.selectionModel().selectedRows()
         if not rows or len(rows) == 0:
-            return error_dialog(self.gui, 'Pas de métadonnée affectée',
-                             'Aucun livre selectionné', show=True)
+            return error_dialog(self.gui, 'Pas de métadonnées affectées',
+                             'Aucun livre sélectionné', show=True)
 
       # Map the rows to book ids
         ids = list(map(self.gui.library_view.model().id, rows))
@@ -174,8 +177,9 @@ class InterfacePlugin(InterfaceAction):
 
         if DEBUG: prints('nfsr_id is recorded, metadata is prepared for {} book(s) out of {}'.format(nbr_ok, len(ids)))
         info_dialog(self.gui, 'nsfr_id: enregistré',
-                'Les metadonées ont été préparées pour {} livre(s) sur {}'.format(nbr_ok, len(ids)),
+                'Les métadonnées ont été préparées pour {} livre(s) sur {}'.format(nbr_ok, len(ids)),
                 show=True)
+
       # new_api does not know anything about marked books, so we use the full db object
         if len(set_ok):
             self.gui.current_db.set_marked_ids(set_ok)
@@ -212,7 +216,7 @@ class InterfacePlugin(InterfaceAction):
             prints(" titre is a string : ", isinstance(titre, str))
 
       # remove all trace of an old synchronization file between calibre and the outside process running QWebEngineView
-        for i in glob.glob( os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):
+        for i in glob.glob( os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*")):
             with contextlib.suppress(FileNotFoundError): os.remove(i)
 
       # Launch a separate process to view the URL in WebEngine
@@ -227,11 +231,11 @@ class InterfacePlugin(InterfaceAction):
         sleep(5)
 
       # wait till file is removed but loop fast enough for a user to feel the operation instantaneous
-        while glob.glob(os.path.join(tempfile.gettempdir(),"sync-cal-qweb*")):
+        while glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*")):
             sleep(.2)           # loop fast enough for a user to feel the operation instantaneous
 
-      # synch file is gone, meaning QWebEngineView process is closed so, we can collect the result
-        tpf = open(os.path.join(tempfile.gettempdir(),"report_returned_id"), "r")
+      # sync file is gone, meaning QWebEngineView process is closed so, we can collect the result
+        tpf = open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r")
         returned_id = tpf.read()
         tpf.close()
 
@@ -242,8 +246,8 @@ class InterfacePlugin(InterfaceAction):
             # set the nsfr_is, reset most metadata...
             for key in mi.custom_field_keys():
                 display_name, val, oldval, fm = mi.format_field_extended(key)
-                if "coll_srl" in display_name : cstm_coll_srl_fm=fm
-                if "collection" in display_name : cstm_collection_fm=fm
+                if self.coll_srl_name == key : cstm_coll_srl_fm=fm
+                if self.collection_name == key : cstm_collection_fm=fm
             mi.publisher=""
             mi.series=""
             mi.language=""
@@ -286,8 +290,8 @@ class InterfacePlugin(InterfaceAction):
         # Get currently selected books
         rows = self.gui.library_view.selectionModel().selectedRows()
         if not rows or len(rows) == 0:
-            return error_dialog(self.gui, 'Pas de métadonnée affectée',
-                             'Aucun livre selectionné', show=True)
+            return error_dialog(self.gui, 'Pas de métadonnées affectées',
+                             'Aucun livre sélectionné', show=True)
 
         # Map the rows to book ids
         ids = list(map(self.gui.library_view.model().id, rows))
@@ -300,10 +304,14 @@ class InterfacePlugin(InterfaceAction):
             # find custom field of interest
             for key in mi.custom_field_keys():
                 display_name, val, oldval, fm = mi.format_field_extended(key)
-                if "coll_srl" in display_name : cstm_coll_srl_fm=fm
-                if "collection" in display_name : cstm_collection_fm=fm
-            # reset the metadata fields that need to be (publisher, series, language, pubdate, identifier)
-            # leaving those we want to keep (isbn, autors, title) and those we know will be replaced or
+                if self.coll_srl_name == key :
+                    cstm_coll_srl_fm=fm
+                if self.collection_name == key :
+                    cstm_collection_fm=fm
+
+            # reset the metadata fields that need to be: publisher, self.collection_name (#collection),
+            # self.coll_srl_name (#coll_srl), series, language, pubdate, identifier
+            # leaving those we want to keep (isbn, authors, title) and those we know will be replaced or
             # augmented (comments, rating, tag, whatever custom columns...)
             mi.publisher=""
             mi.series=""
@@ -321,9 +329,16 @@ class InterfacePlugin(InterfaceAction):
 
         if DEBUG: prints('Updated the metadata in the files of {} book(s)'.format(len(ids)))
 
-        info_dialog(self.gui, 'Metadonnées changées',
-                'Les metadonées ont été effacées pour {} livre(s)'.format(len(ids)),
+        info_dialog(self.gui, 'Métadonnées changées',
+                'Les métadonnées ont été effacées pour {} livre(s)'.format(len(ids)),
                 show=True)
+
+      # select all and only those that have been cleaned... for a possible futher action
+      # such as metadata download from calibre or choice of the volume from noosfere_util
+        self.gui.current_db.set_marked_ids(ids)
+        self.gui.search.setEditText('marked:true')
+        self.gui.search.do_search()
+
 
     def unscramble_publisher(self):
         if DEBUG: prints("in unscramble_publisher")
@@ -333,8 +348,8 @@ class InterfacePlugin(InterfaceAction):
       # Get currently selected books
         rows = self.gui.library_view.selectionModel().selectedRows()
         if not rows or len(rows) == 0:
-            return error_dialog(self.gui, 'Pas de métadonnée affectée',
-                             'Aucun livre selectionné', show=True)
+            return error_dialog(self.gui, 'Pas de métadonnées affectées',
+                             'Aucun livre sélectionné', show=True)
 
         # Map the rows to book ids
         ids = list(map(self.gui.library_view.model().id, rows))
@@ -345,21 +360,21 @@ class InterfacePlugin(InterfaceAction):
             mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
             scrbl_dt = mi.publisher
             if scrbl_dt:
-                collection, coll_srl = None, None
-                if "€" in scrbl_dt: scrbl_dt, coll_srl = scrbl_dt.split("€")
-                if "§" in scrbl_dt: scrbl_dt, collection = scrbl_dt.split("§")
+                val_collection, val_coll_srl = None, None
+                if "€" in scrbl_dt: scrbl_dt, val_coll_srl = scrbl_dt.split("€")
+                if "§" in scrbl_dt: scrbl_dt, val_collection = scrbl_dt.split("§")
                 if DEBUG:
-                    prints("collection : ", collection) if collection else prints("collection not in publisher")
-                    prints("coll_srl   : ", coll_srl) if coll_srl else prints("coll_srl not in publisher")
+                    prints("val_collection : ", val_collection) if val_collection else prints("val_collection not in publisher")
+                    prints("val_coll_srl   : ", val_coll_srl) if val_coll_srl else prints("val_coll_srl not in publisher")
                     prints("éditeur (scrbl_dt)   : ", scrbl_dt)
               # Set the current metadata of interest for this book in the db
-                if collection: db.set_field(self.collection_name, {book_id: collection})
-                if coll_srl: db.set_field(self.coll_srl_name, {book_id: coll_srl})
+                if val_collection: db.set_field(self.collection_name, {book_id: val_collection})
+                if val_coll_srl: db.set_field(self.coll_srl_name, {book_id: val_coll_srl})
                 db.set_field("publisher", {book_id: scrbl_dt})
                 self.gui.iactions['Edit Metadata'].refresh_gui([book_id])
 
         info_dialog(self.gui, 'Information distribuée',
-                "L'informationa été distribuée pour {} livre(s)".format(len(ids)),
+                "L'information a été distribuée pour {} livre(s)".format(len(ids)),
                 show=True)
 
     def test_for_column(self):
@@ -373,76 +388,80 @@ class InterfacePlugin(InterfaceAction):
         for key, column in custom_columns.items(): all_custom_col.append(key)
         if DEBUG: prints("all_custom_col :", all_custom_col)
         if (self.collection_name and self.coll_srl_name) not in all_custom_col:
-            prints("Houston, we have a problem...")
+            if DEBUG: prints("Houston, we have a problem...")
             info_dialog(self.gui, 'Colonne inexistante',
-                "<p> L'une ou l'autre colonne n'existe pas... Veuillez y remédier.</p>"
-                "<p> On peut utiliser <strong>noosfere_util</strong>, pour <strong>personnaliser l'extention</strong>.</p>",
+                "<p> L'une ou l'autre colonne ou même les deux n'existe(nt) pas... Veuillez y remédier.</p>"
+                "<p> On peut utiliser <strong>noosfere_util</strong>, pour <strong>personnaliser l'extension</strong>.</p>",
                 show=True)
             return False
         return True
 
-    def testtesttest(self):
+    def testtesttest(self): # so I can play with the metadata db...
         if DEBUG: prints("in testtesttest")
         # from calibre_plugins.noosfere_util.config import prefs
 
-        prints("in testtesttest; self.collection_name", self.collection_name)
-        prints("in testtesttest; self.coll_srl_name", self.coll_srl_name)
+        if DEBUG: prints("in testtesttest; self.collection_name", self.collection_name)
+        if DEBUG: prints("in testtesttest; self.coll_srl_name", self.coll_srl_name)
 
         # Get currently selected books
         rows = self.gui.library_view.selectionModel().selectedRows()
-        # prints("rows type : ", type(rows), "rows", rows) rows are selected rows in calibre
+        # if DEBUG: prints("rows type : ", type(rows), "rows", rows) rows are selected rows in calibre
         if not rows or len(rows) == 0:
-            return error_dialog(self.gui, 'Pas de métadonnée affectée',
-                             'Aucun livre selectionné', show=True)
+            return error_dialog(self.gui, 'Pas de métadonnées affectées',
+                             'Aucun livre sélectionné', show=True)
 
         # Map the rows to book ids
         ids = list(map(self.gui.library_view.model().id, rows))
-        prints("ids : ", ids)
+        if DEBUG: prints("ids : ", ids)
         db = self.gui.current_db.new_api
         for book_id in ids:
             # Get the current metadata for this book from the db
             mi = db.get_metadata(book_id, get_cover=True, cover_as_data=True)
             fmts = db.formats(book_id)
-            prints("fmts = db.formats(book_id)", fmts)
-            prints(20*"*.")
-            prints("book_id             : ", book_id)
-            prints("mi.title       *    : ", mi.title)
-            prints("mi.authors     *    : ", mi.authors)
-            prints("mi.publisher   --   : ", mi.publisher)
-            prints("mi.pubdate          : ", mi.pubdate)
-            prints("mi.uuid             : ", mi.uuid)
-            prints("mi.languages        : ", mi.languages)
-            prints("mi.tags        --   : ", mi.tags)
-            prints("mi.series      --   : ", mi.series)
-            prints("mi.rating      --   : ", mi.rating)
-            prints("mi.application_id   : ", mi.application_id)
-            prints("mi.id               : ", mi.id)
-            prints("mi.user_categories  : ", mi.user_categories)
-            prints("mi.identifiers      : ", mi.identifiers)
+            if DEBUG: prints("fmts = db.formats(book_id)", fmts)
+            if DEBUG: prints(20*"*.")
+            if DEBUG: prints("book_id             : ", book_id)
+            if DEBUG: prints("mi.title       *    : ", mi.title)
+            if DEBUG: prints("mi.authors     *    : ", mi.authors)
+            if DEBUG: prints("mi.publisher   --   : ", mi.publisher)
+            if DEBUG: prints("mi.pubdate          : ", mi.pubdate)
+            if DEBUG: prints("mi.uuid             : ", mi.uuid)
+            if DEBUG: prints("mi.languages        : ", mi.languages)
+            if DEBUG: prints("mi.tags        --   : ", mi.tags)
+            if DEBUG: prints("mi.series      --   : ", mi.series)
+            if DEBUG: prints("mi.rating      --   : ", mi.rating)
+            if DEBUG: prints("mi.application_id   : ", mi.application_id)
+            if DEBUG: prints("mi.id               : ", mi.id)
+            if DEBUG: prints("mi.user_categories  : ", mi.user_categories)
+            if DEBUG: prints("mi.identifiers      : ", mi.identifiers)
 
             for key in mi.custom_field_keys():
-                prints("custom_field_keys   : ", key)
-            prints(20*"#²")
-
-            for key in mi.custom_field_keys():
-                #prints("custom_field_keys   : ", key)
+                if DEBUG: prints("custom_field_keys   : ", key)
                 display_name, val, oldval, fm = mi.format_field_extended(key)
-                #prints("display_name=%s, val=%s, oldval=%s, ff=%s" % (display_name, val, oldval, fm))
-                if fm and fm['datatype'] != 'composite':
-                    prints("custom_field_keys not composite : ", key)
-                    #prints("display_name=%s, val=%s, oldval=%s, ff=%s" % (display_name, val, oldval, fm))
-                    prints("display_name : ", display_name)
-                    # prints("fm : ", fm)
-                    for key in fm:
-                        prints("fm keys : ", key, end="      | " )
-                        prints("fm[{}] : ".format(key), fm[key])
-                    prints(20*"..")
-                if "coll_srl" in display_name : cstm_coll_srl_fm=fm
-                if "collection" in display_name : cstm_collection_fm=fm
+                if self.coll_srl_name == key :
+                    cstm_coll_srl_fm=fm
+                    if DEBUG: prints("self.coll_srl_name = {}\n cstm_coll_srl_fm = {}".format(key,fm))
+                if self.collection_name == key :
+                    cstm_collection_fm=fm
+                    if DEBUG: prints("self.collection_name = {}\n cstm_collection_fm = {}".format(key,fm))
+            if DEBUG: prints(20*"#²")
 
-            prints(20*"+-")
-            prints("self.coll_srl_name    : ", db.field_for(self.coll_srl_name, book_id))
-            prints("self.collection_name  : ", db.field_for(self.collection_name, book_id))
+            for key in mi.custom_field_keys():
+                # if DEBUG: prints("custom_field_keys   : ", key)
+                display_name, val, oldval, fm = mi.format_field_extended(key)
+                # if DEBUG: prints("display_name={}, val={}, oldval={}, ff={}".format(display_name, val, oldval, fm))
+                if fm and fm['datatype'] != 'composite':
+                    if DEBUG: prints("custom_field_keys not composite : ", key)
+                    if DEBUG: prints("display_name={}\n val={}\n oldval={}\n ff={}".format(display_name, val, oldval, fm))
+                    for sub_key in fm:
+                        if DEBUG: prints("fm keys : ", sub_key, end="      | " )
+                        if DEBUG: prints("fm[{}] : ".format(sub_key), fm[sub_key])
+                    if DEBUG: prints(20*"..")
+
+
+            if DEBUG: prints(20*"+-")
+            if DEBUG: prints("value for self.coll_srl_name    : ", db.field_for(self.coll_srl_name, book_id))
+            if DEBUG: prints("valueself.collection_name  : ", db.field_for(self.collection_name, book_id))
 
             mi.publisher=""
             mi.series=""
@@ -456,11 +475,11 @@ class InterfacePlugin(InterfaceAction):
                 cstm_collection_fm["#value#"] = ""
                 mi.set_user_metadata(self.collection_name, cstm_collection_fm)
 
-            # db.set_metadata(book_id, mi, force_changes=True)
+            # db.set_metadata(book_id, mi, force_changes=True) # BUT I will NOT change anything...
 
 
-        info_dialog(self.gui, 'Updated files',
-                'Updated the metadata in the files of {} book(s)'.format(len(ids)),
+        info_dialog(self.gui, 'exposed data',
+                'Exposed the metadata of {} book(s)'.format(len(ids)),
                 show=True)
 
     def set_configuration(self):
@@ -477,11 +496,17 @@ class InterfacePlugin(InterfaceAction):
         def get_help_file_resource():
           # keep "nfsr_utl_doc.html" as the last item in the list, this is the help entry point
           # we need both files for the help
+            file_path = os.path.join(tempfile.gettempdir(), "noosfere_util_web_075.png")
+            file_data = self.load_resources('doc/' + "noosfere_util_web_075.png")['doc/' + "noosfere_util_web_075.png"]
+            if DEBUG: prints('show_help picture - file_path:', file_path)
+            with open(file_path,'wb') as fpng:
+                fpng.write(file_data)
+
             file_path = os.path.join(tempfile.gettempdir(), "nfsr_utl_doc.html")
             file_data = self.load_resources('doc/' + "nfsr_utl_doc.html")['doc/' + "nfsr_utl_doc.html"]
             if DEBUG: prints('show_help - file_path:', file_path)
-            with open(file_path,'wb') as f:
-                f.write(file_data)
+            with open(file_path,'wb') as fhtm:
+                fhtm.write(file_data)
             return file_path
         url = 'file:///' + get_help_file_resource()
         url = QUrl(url)
@@ -489,7 +514,7 @@ class InterfacePlugin(InterfaceAction):
 
     def about(self):
         text = get_resources("doc/about.txt")
-        QMessageBox.about(self.gui, 'About the Interface Plugin Demo',
+        QMessageBox.about(self.gui, 'About the noosfere_util',
                 text.decode('utf-8'))
 
     def apply_settings(self):

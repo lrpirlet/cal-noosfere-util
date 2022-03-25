@@ -84,14 +84,14 @@ class ConfigWidget(QWidget):
         self.name_collection = QComboBox(self)
         self.name_collection.addItems(self.pertinent_collection_list)
         self.name_collection.setCurrentIndex(self.name_collection.findText(self.current_collection_name,Qt.MatchFixedString))
-        self.name_collection.activated[str].connect(self.select_for_collection)
+        self.name_collection.textActivated.connect(self.select_for_collection)
 
         label_coll_srl = QLabel("Numéro d'ordre dans la collection par l'éditeur")
         self.name_coll_srl = QComboBox(self)
         label_coll_srl.setToolTip("La colonne présentée est celle actuellement sélectionnée.")
         self.name_coll_srl.addItems(self.pertinent_coll_srl_list)
         self.name_coll_srl.setCurrentIndex(self.name_coll_srl.findText(self.current_coll_srl_name,Qt.MatchFixedString))
-        self.name_coll_srl.activated[str].connect(self.select_for_coll_srl)
+        self.name_coll_srl.textActivated.connect(self.select_for_coll_srl)
       # First line
         h_box1 = QHBoxLayout()
         h_box1.addWidget(label_collection)

@@ -86,7 +86,7 @@ class Search_Panel(QWidget):
 
     def showEvent(self, event):
         super(Search_Panel, self).showEvent(event)
-        self.setFocus(True)
+        self.setFocus()
 
 class MainWindow(QMainWindow):
     """

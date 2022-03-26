@@ -388,7 +388,7 @@ class InterfacePlugin(InterfaceAction):
         for key, column in custom_columns.items(): all_custom_col.append(key)
         if DEBUG: prints("all_custom_col :", all_custom_col)
         if (self.collection_name and self.coll_srl_name) not in all_custom_col:
-            if DEBUG: prints("Houston, we have a problem...")
+            if DEBUG: prints("Okay, Houston...we've had a problem here (Apollo 13)")
             info_dialog(self.gui, 'Colonne inexistante',
                 "<p> L'une ou l'autre colonne ou même les deux n'existe(nt) pas... Veuillez y remédier.</p>"
                 "<p> On peut utiliser <strong>noosfere_util</strong>, pour <strong>personnaliser l'extension</strong>.</p>",

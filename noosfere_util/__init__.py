@@ -4,7 +4,6 @@
 __license__   = 'GPL v3'
 __copyright__ = '2021, Louis Richard Pirlet'
 
-
 # The class that all Interface Action plugin wrappers must inherit from
 from calibre.customize import InterfaceActionBase
 

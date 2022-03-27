@@ -8,22 +8,17 @@ from pickle import FALSE
 from typing import Collection
 from calibre import prints
 from calibre.constants import DEBUG
-# from calibre.ebooks.metadata.meta import set_metadata
 from calibre.gui2 import open_url, error_dialog, info_dialog
 from calibre.gui2.actions import InterfaceAction, menu_action_unique_name
-# from calibre.utils.config import config_dir
 from calibre.utils.date import UNDEFINED_DATE
-
 from calibre_plugins.noosfere_util.config import prefs
-#from calibre_plugins.noosfere_util.main import NoosfereUtilDialog
-#from calibre_plugins.noosfere_util.common_utils import (create_menu_action_unique)
 
-#from pkg_resources import FileMetadata
-from PyQt5.Qt import QInputDialog
-from PyQt5.QtWidgets import QToolButton, QMenu, QMessageBox, QApplication
-from PyQt5.QtCore import qDebug, QUrl
+from qt.core import (QMenu, QMessageBox, QToolButton, QUrl)
+
+# from PyQt5.QtWidgets import QToolButton, QMenu, QMessageBox
+# from PyQt5.QtCore import QUrl
+
 from time import sleep
-
 import tempfile, glob, os, contextlib
 
 def create_menu_action_unique(ia, parent_menu, menu_text, image=None, tooltip=None,
@@ -194,6 +189,10 @@ class InterfacePlugin(InterfaceAction):
         '''
         if DEBUG: prints("in run_one_web_main")
 
+      # check for presence of needed column
+        if not self.test_for_column():
+            return
+
         db = self.gui.current_db.new_api
         mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
         isbn, auteurs, titre="","",""
@@ -286,6 +285,10 @@ class InterfacePlugin(InterfaceAction):
         Later, ISBN will be wiped just before nsfr_id (and maybe ISBN) is written.
         '''
         if DEBUG: prints("in wipe_selected_metadata")
+
+      # check for presence of needed column
+        if not self.test_for_column():
+            return
 
         # Get currently selected books
         rows = self.gui.library_view.selectionModel().selectedRows()
@@ -398,7 +401,10 @@ class InterfacePlugin(InterfaceAction):
 
     def testtesttest(self): # so I can play with the metadata db...
         if DEBUG: prints("in testtesttest")
-        # from calibre_plugins.noosfere_util.config import prefs
+
+      # check for presence of needed column
+        if not self.test_for_column():
+            return
 
         if DEBUG: prints("in testtesttest; self.collection_name", self.collection_name)
         if DEBUG: prints("in testtesttest; self.coll_srl_name", self.coll_srl_name)
@@ -514,6 +520,9 @@ class InterfacePlugin(InterfaceAction):
 
     def about(self):
         text = get_resources("doc/about.txt")
+        text += ("\nLe nom de la collection par l'éditeur est : {},"
+                "\nLe numéro d'ordre dans la collection par l'éditeur "
+                "est : {}".format(self.collection_name,self.coll_srl_name)).encode('utf-8')
         QMessageBox.about(self.gui, 'About the noosfere_util',
                 text.decode('utf-8'))
 

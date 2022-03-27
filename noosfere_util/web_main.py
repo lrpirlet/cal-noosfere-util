@@ -4,12 +4,34 @@
 __license__   = 'GPL v3'
 __copyright__ = '2022, Louis Richard Pirlet'
 
-from PyQt5.QtCore import pyqtSlot, QUrl, QSize, Qt, pyqtSignal, QTimer
-from PyQt5.QtWidgets import (QMainWindow, QToolBar, QAction, QLineEdit, QStatusBar, QProgressBar,
-                                QMessageBox, qApp, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                QPushButton, QShortcut)
-from PyQt5.QtGui import QIcon, QKeySequence
-from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
+from qt.core import (pyqtSlot, QUrl, QSize, Qt, pyqtSignal, QTimer,
+    QMainWindow, QToolBar, QAction, QLineEdit, QStatusBar, QProgressBar,
+    QMessageBox, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QShortcut,
+    QKeySequence, QIcon)
+from qt.webengine import QWebEngineView, QWebEnginePage
+
+# from PyQt5.QtCore import pyqtSlot, QUrl, QSize, Qt, pyqtSignal, QTimer
+# from PyQt5.QtWidgets import (QMainWindow, QToolBar, QAction, QLineEdit, QStatusBar, QProgressBar,
+#                                 QMessageBox, qApp, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+#                                 QPushButton, QShortcut)
+# from PyQt5.QtGui import QIcon, QKeySequence
+# from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
+
+# from qt.core import (pyqtProperty, pyqtSignal, pyqtSlot, QAction, QApplication,
+#                 QBrush, QByteArray, QCheckBox, QColor, QColorDialog, QComboBox,
+#                 QCompleter, DateTime, QDialog, QDialogButtonBox, QEasingCurve,
+#                 QEvent, QFont, QFontInfo, QFontMetrics, QFormLayout, QGridLayout,
+#                 QHBoxLayout, QIcon, QInputDialog, QKeySequence, QLabel, QLineEdit,
+#                 QListView, QMainWindow, QMainWindow, QMenu, QMenuBar, QMessageBox,
+#                 QMessageBox, QModelIndex, QObject, QPainter, QPalette, QPixmap,
+#                 QPlainTextEdit, QProgressBar, QPropertyAnimation, QPushButton,
+#                 QShortcut, QSize, QSizePolicy, QSplitter, QStackedWidget, QStatusBar,
+#                 QStyle, QStyleOption, QStylePainter, QSyntaxHighlighter, Qt, QTabBar,
+#                 QTabWidget, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextEdit,
+#                 QTextFormat, QTextListFormat, QTimer, QToolBar, QToolButton, QUrl,
+#                 QVBoxLayout, QWidget
+# )
 
 from calibre.gui2 import Application
 
@@ -71,8 +93,8 @@ class Search_Panel(QWidget):
         self.srch_lt.addWidget(prev_btn)
         self.srch_lt.addWidget(done_btn)
 
-        QShortcut(QKeySequence.FindNext, self, activated=next_btn.animateClick)
-        QShortcut(QKeySequence.FindPrevious, self, activated=prev_btn.animateClick)
+        QShortcut(QKeySequence.StandardKey.FindNext, self, activated=next_btn.animateClick)
+        QShortcut(QKeySequence.StandardKey.FindPrevious, self, activated=prev_btn.animateClick)
         QShortcut(QKeySequence(Qt.Key_Escape), self.srch_dsp, activated=self.closed)
 
     @pyqtSlot()
@@ -252,7 +274,7 @@ class MainWindow(QMainWindow):
         find_btn = QAction(get_icons('blue_icon/search.png'), "Search", self)
         find_btn.setToolTip("Ce bouton fait apparaitre la barre de recherche... Z'avez pas vu Mirza? Oh la la la la la. Où est donc passé ce chien. Je le cherche partout...  (Merci Nino Ferrer)")   # search, search...
         find_btn.triggered.connect(self.wake_search_panel)
-        find_btn.setShortcut(QKeySequence.Find)
+        find_btn.setShortcut(QKeySequence.StandardKey.Find)
         nav_tb.addAction(find_btn)
 
         self.urlbox = QLineEdit()
@@ -388,7 +410,7 @@ class MainWindow(QMainWindow):
         else:
             print('No book selected, no change will take place: unset')
             self.report_returned_id("unset")
-        qApp.quit()     # exit application...
+        Application.instance().quit()     # exit application...
 
     def abort_book(self):                         # we want to NOT change the book and proceed to the next one
         print("in abort_book")
@@ -396,7 +418,7 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.Yes:
             print("WebEngineView was aborted: aborted")
             self.report_returned_id("aborted")
-            qApp.quit()     # exit application...
+            Application.instance().quit()     # exit application...
 
 
     def closeEvent(self, event):                  # abort hit window exit "X" button we stop processing this and all following books
@@ -431,7 +453,7 @@ def main(data):
 
 if __name__ == '__main__':
     '''
-    watch out name 'get_icons' is not defined, and can't be defined easyly...
+    watch out: name 'get_icons' is not defined, and can't be defined easyly...
     workaround, swap it with QIcon + path to icon
     '''
     url = "https://www.noosfere.org/livres/noosearch.asp"   # jump directly to noosfere advanced search page

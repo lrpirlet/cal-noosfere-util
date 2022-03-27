@@ -5,10 +5,10 @@
 __license__   = 'GPL v3'
 __copyright__ = '2021, Louis Richard Pirlet'
 
-from socket import if_indextoname
-from PyQt5.QtWidgets import (QWidget, QLabel, QComboBox, QHBoxLayout, QVBoxLayout)
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
+from qt.core import (QWidget, QLabel, QComboBox, QHBoxLayout, QVBoxLayout, QFont, Qt)
+# from PyQt5.QtWidgets import (QWidget, QLabel, QComboBox, QHBoxLayout, QVBoxLayout)
+# from PyQt5.QtGui import QFont
+# from PyQt5.QtCore import Qt
 
 from calibre import prints
 from calibre.constants import DEBUG
@@ -37,6 +37,7 @@ class ConfigWidget(QWidget):
         self.current_coll_srl_name = prefs["COLL_SRL_NAME"]
 
         if DEBUG:
+            prints("In ConfigWidget")
             prints("self.current_collection_name : ", self.current_collection_name)
             prints("self.current_coll_srl_name : ", self.current_coll_srl_name)
 
@@ -171,15 +172,11 @@ class ConfigWidget(QWidget):
         if DEBUG: prints("result : ", result)
         if result[0] == CreateNewCustomColumn.Result.COLUMN_ADDED:
             if lookup_name == "#collection" :
-                self.create_combo_box_list("text")
-                self.name_collection.clear()
-                self.name_collection.addItems(self.pertinent_collection_list)
+                self.name_collection.addItem(result[1])
                 self.name_collection.setCurrentIndex(self.name_collection.findText(result[1], Qt.MatchFixedString))
                 self.collection_name = result[1]
             elif lookup_name == "#coll_srl" :
-                self.create_combo_box_list("comments")
-                self.name_coll_srl.clear()
-                self.name_coll_srl.addItems(self.pertinent_coll_srl_list)
+                self.name_coll_srl.addItem(result[1])
                 self.name_coll_srl.setCurrentIndex(self.name_coll_srl.findText(result[1], Qt.MatchFixedString))
                 self.coll_srl_name = result[1]
         return
@@ -194,8 +191,8 @@ class ConfigWidget(QWidget):
 
         allow_restart = question_dialog(self.gui, 'calibre devrait redémarrer',
                 "<p>Pour être pris en considération, ce choix de colonne(s) impose un redémarrage...<p>"
-                "<p>Le nom de la collection par l'éditeur sera : {}<p>"
-                "<p>Le numéro d'ordre dans la collection par l'éditeur sera : {}<p>"
+                "<p>Le nom de la collection par l'éditeur sera : <strong>{}</strong><p>"
+                "<p>Le numéro d'ordre dans la collection par l'éditeur sera : <strong>{}</strong><p>"
                 "<p>On redémarre maintenant?<p>".format(self.collection_name,self.coll_srl_name),
                 show_copy_button=False)
         if allow_restart :

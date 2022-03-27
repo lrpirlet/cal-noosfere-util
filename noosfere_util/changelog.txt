@@ -41,4 +41,4 @@ Added some code to fill the noosfere form (was a lot easier than expected)
 Implemented a logging class and redirected output to a log file for the detached
 process web_main.py, now I can see what is wrong and correct it.
 
-I came up with a working config.py that is far from being user friendly...  It works for me, so...
+version(0.0.5) is submitted for testing

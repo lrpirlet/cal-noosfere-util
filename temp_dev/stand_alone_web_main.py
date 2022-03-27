@@ -4,39 +4,35 @@
 __license__   = 'GPL v3'
 __copyright__ = '2022, Louis Richard Pirlet'
 
+from qt.core import (pyqtSlot, QUrl, QSize, Qt, pyqtSignal, QTimer,
+    QMainWindow, QToolBar, QAction, QLineEdit, QStatusBar, QProgressBar,
+    QMessageBox, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QShortcut,
+    QKeySequence, QIcon)
+
+from qt.webengine import QWebEngineView, QWebEnginePage
 
 # from PyQt5.QtCore import pyqtSlot, QUrl, QSize, Qt, pyqtSignal, QTimer
-from qt.core import (pyqtSlot, QUrl, QSize, Qt, pyqtSignal, QTimer,      # from PyQt5.QtCore import pyqtSlot, QUrl, QSize, Qt, pyqtSignal, QTimer
-    QMainWindow, QToolBar, QAction, QLineEdit, QStatusBar, QProgressBar, # from PyQt5.QtWidgets import (QMainWindow, QToolBar, QAction, QLineEdit, QStatusBar, QProgressBar,
-    QMessageBox, QWidget, QVBoxLayout, QHBoxLayout, QLabel,        # qApp,                                 QMessageBox, qApp, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QShortcut,                                              #                                 QPushButton, QShortcut)
-    QKeySequence, QIcon                                                  # from PyQt5.QtGui import QKeySequence    #, QIcon
-)
-# from qt.core import ()
-#     QApplication, QBrush, QByteArray, QCheckBox, QColor, QColorDialog,
-#     QDialog, QDialogButtonBox, QFont, QFontInfo, QFontMetrics, QFormLayout,
-#     QMenu, QPalette, QPlainTextEdit,
-#     QSyntaxHighlighter, QTabWidget, QTextBlockFormat, QTextCharFormat,
-#     QTextCursor, QTextEdit, QTextFormat, QTextListFormat,
-#     QObject, QToolButton,  QMenuBar,
-#     QPropertyAnimation, QEasingCurve, pyqtProperty, QPainter,
-#     QEvent, QStylePainter,
-#     QSizePolicy, QSplitter, QStackedWidget, QStyle, QStyleOption,
-#     QTabBar,
-#     QComboBox, QCompleter, QDateTime,
-#     QGridLayout, QInputDialog,
-#     QListView, QModelIndex,
-#     QPixmap, pyqtSlot, QUrl, QSize, Qt, pyqtSignal, QTimer,
-#     QMainWindow, QToolBar, QAction, QLineEdit, QStatusBar, QProgressBar,
-#     QMessageBox, QWidget, QVBoxLayout, QHBoxLayout, QLabel,            #                                 QPushButton, QShortcut)
-#     QKeySequence, QIcon
+# from PyQt5.QtWidgets import (QMainWindow, QToolBar, QAction, QLineEdit, QStatusBar, QProgressBar,
+#                                 QMessageBox, qApp, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+#                                 QPushButton, QShortcut)
+# from PyQt5.QtGui import QIcon, QKeySequence
+# from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
+
+# from qt.core import (pyqtProperty, pyqtSignal, pyqtSlot, QAction, QApplication,
+#                 QBrush, QByteArray, QCheckBox, QColor, QColorDialog, QComboBox,
+#                 QCompleter, DateTime, QDialog, QDialogButtonBox, QEasingCurve,
+#                 QEvent, QFont, QFontInfo, QFontMetrics, QFormLayout, QGridLayout,
+#                 QHBoxLayout, QIcon, QInputDialog, QKeySequence, QLabel, QLineEdit,
+#                 QListView, QMainWindow, QMainWindow, QMenu, QMenuBar, QMessageBox,
+#                 QMessageBox, QModelIndex, QObject, QPainter, QPalette, QPixmap,
+#                 QPlainTextEdit, QProgressBar, QPropertyAnimation, QPushButton,
+#                 QShortcut, QSize, QSizePolicy, QSplitter, QStackedWidget, QStatusBar,
+#                 QStyle, QStyleOption, QStylePainter, QSyntaxHighlighter, Qt, QTabBar,
+#                 QTabWidget, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextEdit,
+#                 QTextFormat, QTextListFormat, QTimer, QToolBar, QToolButton, QUrl,
+#                 QVBoxLayout, QWidget
 # )
-
-
-
-
-
-from qt.webengine import QWebEngineView, QWebEnginePage     # from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 
 from calibre.gui2 import Application
 
@@ -98,8 +94,8 @@ class Search_Panel(QWidget):
         self.srch_lt.addWidget(prev_btn)
         self.srch_lt.addWidget(done_btn)
 
-        #QShortcut(QKeySequence.FindNext, self, activated=next_btn.animateClick)
-        #QShortcut(QKeySequence.FindPrevious, self, activated=prev_btn.animateClick)
+        QShortcut(QKeySequence.StandardKey.FindNext, self, activated=next_btn.animateClick)
+        QShortcut(QKeySequence.StandardKey.FindPrevious, self, activated=prev_btn.animateClick)
         QShortcut(QKeySequence(Qt.Key_Escape), self.srch_dsp, activated=self.closed)
 
     @pyqtSlot()
@@ -279,7 +275,7 @@ class MainWindow(QMainWindow):
         find_btn = QAction(QIcon('./blue_icon/search.png'), "Search", self)
         find_btn.setToolTip("Ce bouton fait apparaitre la barre de recherche... Z'avez pas vu Mirza? Oh la la la la la. Où est donc passé ce chien. Je le cherche partout...  (Merci Nino Ferrer)")   # search, search...
         find_btn.triggered.connect(self.wake_search_panel)
-        #find_btn.setShortcut(QKeySequence.Find)
+        find_btn.setShortcut(QKeySequence.StandardKey.Find)
         nav_tb.addAction(find_btn)
 
         self.urlbox = QLineEdit()

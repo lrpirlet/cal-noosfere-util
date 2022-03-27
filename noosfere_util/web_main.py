@@ -9,6 +9,7 @@ from qt.core import (pyqtSlot, QUrl, QSize, Qt, pyqtSignal, QTimer,
     QMessageBox, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QShortcut,
     QKeySequence, QIcon)
+
 from qt.webengine import QWebEngineView, QWebEnginePage
 
 # from PyQt5.QtCore import pyqtSlot, QUrl, QSize, Qt, pyqtSignal, QTimer
@@ -102,7 +103,7 @@ class Search_Panel(QWidget):
         self.update_searching(QWebEnginePage.FindBackward)
 
     @pyqtSlot()
-    def update_searching(self, direction=QWebEnginePage.FindFlag()):
+    def update_searching(self, direction=QWebEnginePage.FindFlag(0)):
         flag = direction
         self.searched.emit(self.srch_dsp.text(), flag)
 
@@ -403,14 +404,14 @@ class MainWindow(QMainWindow):
         print("in select_and_exit")
         choosen_url = self.urlbox.text()
         if "numlivre=" in choosen_url:
-            print('choosen_url : ',choosen_url)
+            print('choosen_url : {}'.format(choosen_url))
             nsfr_id = "vl$"+choosen_url.split("numlivre=")[1]
-            print("nsfr_id : ", nsfr_id)
+            print("nsfr_id : {}".format(nsfr_id))
             self.report_returned_id(nsfr_id)
         else:
             print('No book selected, no change will take place: unset')
             self.report_returned_id("unset")
-        Application.instance().quit()     # exit application...
+        Application.instance().exit()     # exit application...
 
     def abort_book(self):                         # we want to NOT change the book and proceed to the next one
         print("in abort_book")
@@ -418,7 +419,7 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.Yes:
             print("WebEngineView was aborted: aborted")
             self.report_returned_id("aborted")
-            Application.instance().quit()     # exit application...
+            Application.instance().exit()     # exit application...
 
 
     def closeEvent(self, event):                  # abort hit window exit "X" button we stop processing this and all following books
@@ -455,6 +456,9 @@ if __name__ == '__main__':
     '''
     watch out: name 'get_icons' is not defined, and can't be defined easyly...
     workaround, swap it with QIcon + path to icon
+    replace all get_icons(' with QIcon('./ (do NOT replace me :-) )
+    AND to get errors on screen, comment out class StreamToLogger(object)
+    along with the 10 first lines in __init__ of class MainWindow(QMainWindow
     '''
     url = "https://www.noosfere.org/livres/noosearch.asp"   # jump directly to noosfere advanced search page
     isbn = "2-277-12362-5"
@@ -470,7 +474,7 @@ if __name__ == '__main__':
   # from here should modify the metadata, or not.
     if returned_id.replace("vl$","").replace("-","").isnumeric():
         nsfr_id = returned_id
-        print("nfsr_id : ", nsfr_id)
+        print("nfsr_id : {}".format(nsfr_id))
     elif "unset" in returned_id:
         print('unset, no change will take place...')
     elif "killed" in returned_id:

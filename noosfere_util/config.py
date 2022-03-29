@@ -172,10 +172,12 @@ class ConfigWidget(QWidget):
         if DEBUG: prints("result : ", result)
         if result[0] == CreateNewCustomColumn.Result.COLUMN_ADDED:
             if lookup_name == "#collection" :
+                self.name_collection.removeItem(self.name_collection.findText("Ajouter et sélectionner une colonne", Qt.MatchFixedString))
                 self.name_collection.addItem(result[1])
                 self.name_collection.setCurrentIndex(self.name_collection.findText(result[1], Qt.MatchFixedString))
                 self.collection_name = result[1]
             elif lookup_name == "#coll_srl" :
+                self.name_collection.removeItem(self.name_collection.findText("Ajouter et sélectionner une colonne", Qt.MatchFixedString))
                 self.name_coll_srl.addItem(result[1])
                 self.name_coll_srl.setCurrentIndex(self.name_coll_srl.findText(result[1], Qt.MatchFixedString))
                 self.coll_srl_name = result[1]

@@ -47,12 +47,12 @@ def create_menu_action_unique(ia, parent_menu, menu_text, image=None, tooltip=No
     kb = ia.gui.keyboard
     if unique_name is None:
         unique_name = menu_text
-    if not shortcut == False:
+    if not shortcut is False:
         full_unique_name = menu_action_unique_name(ia, unique_name)
         if full_unique_name in kb.shortcuts:
             shortcut = False
         else:
-            if shortcut is not None and not shortcut == False:
+            if shortcut is not None and not shortcut is False:
                 if len(shortcut) == 0:
                     shortcut = None
                 else:
@@ -63,7 +63,7 @@ def create_menu_action_unique(ia, parent_menu, menu_text, image=None, tooltip=No
 
     ac = ia.create_menu_action(parent_menu, unique_name, menu_text, icon=None, shortcut=shortcut,
         description=tooltip, triggered=triggered, shortcut_name=shortcut_name)
-    if shortcut == False and not orig_shortcut == False:
+    if shortcut is False and not orig_shortcut is False:
         if ac.calibre_shortcut_unique_name in ia.gui.keyboard.shortcuts:
             kb.replace_action(ac.calibre_shortcut_unique_name, ac)
     if image:
@@ -234,7 +234,7 @@ class InterfacePlugin(InterfaceAction):
             sleep(.2)           # loop fast enough for a user to feel the operation instantaneous
 
       # sync file is gone, meaning QWebEngineView process is closed so, we can collect the result
-        tpf = open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r")
+        tpf = open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r", encoding="utf_8")
         returned_id = tpf.read()
         tpf.close()
 

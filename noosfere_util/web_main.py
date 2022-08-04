@@ -41,7 +41,7 @@ from functools import partial
 import tempfile, os, sys, logging
 
 
-class StreamToLogger(object):
+class StreamToLogger():
     """
     Fake file-like stream object that redirects writes to a logger instance.
     This will help when the web browser in web_main does not pop-up (read: web_main crashes)
@@ -64,7 +64,7 @@ class Search_Panel(QWidget):
     closed = pyqtSignal()
 
     def __init__(self,parent=None):
-        super(Search_Panel,self).__init__(parent)
+        super().__init__(parent)
 
         next_btn = QPushButton('Suivant')
         next_btn.setToolTip("Ce bouton recherche la prochaine occurrence dans la page")
@@ -108,7 +108,7 @@ class Search_Panel(QWidget):
         self.searched.emit(self.srch_dsp.text(), flag)
 
     def showEvent(self, event):
-        super(Search_Panel, self).showEvent(event)
+        super().showEvent(event)
         self.setFocus()
 
 class MainWindow(QMainWindow):
@@ -378,7 +378,7 @@ class MainWindow(QMainWindow):
 
     def report_returned_id(self, returned_id):
         print("in report_returned_id returned_id : {}".format(returned_id))
-        report_tpf=open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"),"w")
+        report_tpf=open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"),"w",encoding="utf_8")
         report_tpf.write(returned_id)
         report_tpf.close
 
@@ -467,7 +467,7 @@ if __name__ == '__main__':
     data = [url, isbn, auteurs, titre]
     main(data)
 
-    tf = open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r")
+    tf = open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r",encoding='utf_8')
     returned_id = tf.read()
     tf.close()
 

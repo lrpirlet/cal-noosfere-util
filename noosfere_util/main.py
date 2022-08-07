@@ -133,6 +133,12 @@ class InterfacePlugin(InterfaceAction):
         # create_menu_action_unique(self, self.menu, _('testtesttest'), 'blue_icon/top_icon.png',
         #                           triggered=self.testtesttest)
 
+      # The following is hidden cause it only allows me to develop show the book_info in background
+      # there is really no other uses for 'run_test_info'
+        self.menu.addSeparator()
+        create_menu_action_unique(self, self.menu, _('test_run_web_main'), 'blue_icon/top_icon.png',
+                                  triggered=self.test_run_web_main)
+
         self.gui.keyboard.finalize()
 
       # Assign our menu to this action and an icon, also add dropdown menu
@@ -299,9 +305,9 @@ class InterfacePlugin(InterfaceAction):
         # Map the rows to book ids
         ids = list(map(self.gui.library_view.model().id, rows))
         if DEBUG : prints("ids : ", ids)
+        db = self.gui.current_db.new_api
 
         for book_id in ids:
-            db = self.gui.current_db.new_api
             # Get the current metadata for this book from the db (not any info about cover)
             mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
             # find custom field of interest
@@ -420,6 +426,7 @@ class InterfacePlugin(InterfaceAction):
         ids = list(map(self.gui.library_view.model().id, rows))
         if DEBUG: prints("ids : ", ids)
         db = self.gui.current_db.new_api
+
         for book_id in ids:
             # Get the current metadata for this book from the db
             mi = db.get_metadata(book_id, get_cover=True, cover_as_data=True)
@@ -487,6 +494,162 @@ class InterfacePlugin(InterfaceAction):
         info_dialog(self.gui, 'exposed data',
                 'Exposed the metadata of {} book(s)'.format(len(ids)),
                 show=True)
+
+
+    def test_run_web_main(self):
+        '''
+        For the selected books:
+        wipe metadata, launch a web-browser to select the desired volumes,
+        set the nsfr_id, remove the ISBN (?fire a metadata download?)
+        '''
+        if DEBUG: prints("in test_run_web_main")
+
+      # Get currently selected books
+        rows = self.gui.library_view.selectionModel().selectedRows()
+        if DEBUG : prints("rows : ", rows)
+        if not rows or len(rows) == 0:
+            return error_dialog(self.gui, 'Pas de métadonnées affectées',
+                             'Aucun livre sélectionné', show=True)
+
+
+        book_rows = [map(self.gui.library_view.currentIndex().row(),rows)]
+        if DEBUG : prints("rows : ", book_rows)
+        if DEBUG : prints("current_index : ", self.gui.library_view.currentIndex())
+        if DEBUG : prints("current_row : ", self.gui.library_view.currentIndex().row()) # current_row=self.gui.library_view.currentIndex().row())
+
+        row_s = [r.row() for r in self.gui.library_view.selectionModel().selectedRows()] # ca c'est bon row in selected order
+        if DEBUG : prints("row_s : ", row_s)
+
+    #   # Map the rows to book ids
+        ids = list(map(self.gui.library_view.model().id, rows))                          # ça c'est bon id in selected order
+        if DEBUG : prints("ids : ", ids)
+          # book_id = self.gui.library_view.model().id(row)
+      # do the job for one book
+      # nsfr_id_recu is true if metadata was updated, false if web_returned no nsfr_id
+        nbr_ok = 0
+        set_ok = set()
+        for book_row in rows:
+            if DEBUG : prints("book_row : ", book_row)
+            if DEBUG : prints("type(book_row) : ", type(book_row))
+            answer = self.test_run_one_web_main(book_row)
+            nsfr_id_recu, more = answer[0], answer[1]
+      # mark books that have NOT been bypassed... so we can fetch metadata on selected
+            if nsfr_id_recu:
+                nbr_ok += 1
+                set_ok.add(self.gui.library_view.model().id(book_row))
+                prints("set_ok", set_ok)
+            if not more: break
+
+        if DEBUG: prints('nfsr_id is recorded, metadata is prepared for {} book(s) out of {}'.format(nbr_ok, len(ids)))
+        info_dialog(self.gui, 'nsfr_id: enregistré',
+                'Les métadonnées ont été préparées pour {} livre(s) sur {}'.format(nbr_ok, len(ids)),
+                show=True)
+
+      # new_api does not know anything about marked books, so we use the full db object
+        if len(set_ok):
+            self.gui.current_db.set_marked_ids(set_ok)
+            self.gui.search.setEditText('marked:true')
+            self.gui.search.do_search()
+
+    def test_run_one_web_main(self, book_row):
+        '''
+        For the books_id:
+        wipe metadata, launch a web-browser to select the desired volumes,
+        set the nsfr_id, remove the ISBN (?fire a metadata download?)
+        '''
+        if DEBUG: prints("in test_run_one_web_main")
+        book_id = self.gui.library_view.model().id(book_row)
+        db = self.gui.current_db.new_api
+      # display "Book details"
+        if DEBUG: prints("should display book details")
+        self.gui.library_view.model().refresh_ids([book_id], current_row=book_row)
+        #self.gui.iactions['Show Book Details'].show_book_info()
+
+      # check for presence of needed column
+        if not self.test_for_column():
+            return
+
+        mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
+        isbn, auteurs, titre="","",""
+
+        if DEBUG: prints("book_id          : ", book_id)
+        if DEBUG and mi.title: prints("title       *    : ", mi.title)
+        if DEBUG and mi.authors: prints("authors     *    : ", mi.authors)
+        if DEBUG and "isbn" in mi.get_identifiers(): prints("isbn             : ", mi.get_identifiers()["isbn"])
+
+      # set url, isbn, auteurs and titre
+        url = "https://www.noosfere.org/livres/noosearch.asp"     # jump directly to noosfere advanced search page
+        if "isbn" in mi.get_identifiers(): isbn = mi.get_identifiers()["isbn"]
+        auteurs = " & ".join(mi.authors)
+        titre = mi.title
+        data = [url, isbn, auteurs, titre]
+        if DEBUG:
+            prints(" url is a string : ", isinstance(url, str))
+            prints(" isbn is a string : ", isinstance(isbn, str))
+            prints(" auteurs is a string : ", isinstance(auteurs, str))
+            prints(" titre is a string : ", isinstance(titre, str))
+
+      # remove all trace of an old synchronization file between calibre and the outside process running QWebEngineView
+        for i in glob.glob( os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*")):
+            with contextlib.suppress(FileNotFoundError): os.remove(i)
+
+      # Launch a separate process to view the URL in WebEngine
+        self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.noosfere_util.web_main', 'data':data})
+        if DEBUG: prints("webengine-dialog process submitted")
+        # WARNING: "webengine-dialog" is a defined function in calibre\src\calibre\utils\ipc\worker.py ...DO NOT CHANGE...
+
+        # sleep some like 5 seconds to wait for web_main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
+        # make sure that main loop is NOT responding while QWebEngineView is running.
+        # That could result in hang... on purpose, I am NOT looking for control-c...
+        # that should raise attention AND trigger looking into temp dir for nsfr_utl-web_main.log
+        sleep(5)
+
+      # wait till file is removed but loop fast enough for a user to feel the operation instantaneous
+        while glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*")):
+            sleep(.2)           # loop fast enough for a user to feel the operation instantaneous
+
+      # sync file is gone, meaning QWebEngineView process is closed so, we can collect the result
+        tpf = open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r", encoding="utf_8")
+        returned_id = tpf.read()
+        tpf.close()
+
+        if DEBUG: prints("returned_id", returned_id)
+
+        if returned_id.replace("vl$","").replace("-","").isnumeric():
+            nsfr_id = returned_id
+            # set the nsfr_is, reset most metadata...
+            for key in mi.custom_field_keys():
+                display_name, val, oldval, fm = mi.format_field_extended(key)
+                if self.coll_srl_name == key : cstm_coll_srl_fm=fm
+                if self.collection_name == key : cstm_collection_fm=fm
+            mi.publisher=""
+            mi.series=""
+            mi.language=""
+            mi.pubdate=UNDEFINED_DATE
+            mi.set_identifier('nsfr_id', nsfr_id)
+            mi.set_identifier('isbn', "")
+            if cstm_coll_srl_fm:
+                cstm_coll_srl_fm["#value#"] = ""
+                mi.set_user_metadata(self.coll_srl_name, cstm_coll_srl_fm)
+            if cstm_collection_fm:
+                cstm_collection_fm["#value#"] = ""
+                mi.set_user_metadata(self.collection_name, cstm_collection_fm)
+
+            # commit the change, force reset of the above fields, leave the others alone
+            db.set_metadata(book_id, mi, force_changes=True)
+            return (True, True)                                 # nsfr_id received, more book
+        elif "unset" in returned_id:
+            if DEBUG: prints('unset, no change will take place...')
+            return (False, True)                                # nsfr_id NOT received, more book
+        elif "aborted" in returned_id:
+            if DEBUG: prints('aborted, no change will take place...')
+            return (False, True)                                # nsfr_id NOT received, more book
+        elif "killed" in returned_id:
+            if DEBUG: prints('killed, no change will take place...')
+            return (False, False)                               # nsfr_id NOT received, NO more book
+        else:
+            if DEBUG: prints("should not ends here... returned_id : ", returned_id)
+            return (False, False)                               # STOP everything program error
 
     def set_configuration(self):
         '''

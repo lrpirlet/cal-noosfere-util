@@ -199,6 +199,9 @@ class InterfacePlugin(InterfaceAction):
         if not self.test_for_column():
             return
 
+      # display "Book details"
+        self.gui.library_view.select_rows((book_id,))
+
         db = self.gui.current_db.new_api
         mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
         isbn, auteurs, titre="","",""
@@ -229,15 +232,24 @@ class InterfacePlugin(InterfaceAction):
         if DEBUG: prints("webengine-dialog process submitted")
         # WARNING: "webengine-dialog" is a defined function in calibre\src\calibre\utils\ipc\worker.py ...DO NOT CHANGE...
 
-        # sleep some like 5 seconds to wait for web_main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
-        # make sure that main loop is NOT responding while QWebEngineView is running.
-        # That could result in hang... on purpose, I am NOT looking for control-c...
-        # that should raise attention AND trigger looking into temp dir for nsfr_utl-web_main.log
-        sleep(5)
+      # wait for web_main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
+        # do it quick... because killing main calibre GUI before killin noosfere_util WebGUI
+        # ends in calibre process HANG and no GUI... restart calibre is not possible
+        # OR make sure that main loop is NOT responding while QWebEngineView is running using sleep(5)
+        # !!! the following allows the user to act on main calibre GUI !!!!
+        while not glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*")):
+            loop = QEventLoop()
+            QTimer.singleShot(200, loop.quit)
+            loop.exec_()
+        # OR sleep(5)
 
       # wait till file is removed but loop fast enough for a user to feel the operation instantaneous
+        # !!! be carefull, see above !!!
         while glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*")):
-            sleep(.2)           # loop fast enough for a user to feel the operation instantaneous
+            loop = QEventLoop()
+            QTimer.singleShot(200, loop.quit)
+            loop.exec_()
+        # OR    sleep(.2)           # loop fast enough for a user to feel the operation instantaneous
 
       # sync file is gone, meaning QWebEngineView process is closed so, we can collect the result
         tpf = open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r", encoding="utf_8")
@@ -515,8 +527,8 @@ class InterfacePlugin(InterfaceAction):
         ids = list(map(self.gui.library_view.model().id, rows))     # book_id = self.gui.library_view.model().id(row)
         if DEBUG : prints("ids : ", ids)                            # ça c'est bon: list of id in selected order
 
-        row_s = [r.row() for r in self.gui.library_view.selectionModel().selectedRows()] # ca c'est bon list of row in selected order
-        if DEBUG : prints("row_s : ", row_s)
+        # row_s = [r.row() for r in self.gui.library_view.selectionModel().selectedRows()] # ca c'est bon list of row in selected order
+        # if DEBUG : prints("row_s : ", row_s)
 
         # book_rows = [map(self.gui.library_view.currentIndex().row(),rows)]
         # if DEBUG : prints("rows : ", book_rows)       # list of PyQt6.QtCore.QModelIndex object
@@ -529,8 +541,8 @@ class InterfacePlugin(InterfaceAction):
         set_ok = set()
         for book_id in ids:
             if DEBUG : prints("book_id : ", book_id)
-            if DEBUG : prints("row     : ", row_s[ids.index(book_id)])
-            answer = self.test_run_one_web_main(book_id, row_s[ids.index(book_id)])
+            # if DEBUG : prints("row     : ", row_s[ids.index(book_id)])
+            answer = self.test_run_one_web_main(book_id)  # , row_s[ids.index(book_id)])
             nsfr_id_recu, more = answer[0], answer[1]
       # mark books that have NOT been bypassed... so we can fetch metadata on selected
             if nsfr_id_recu:
@@ -550,7 +562,7 @@ class InterfacePlugin(InterfaceAction):
             self.gui.search.setEditText('marked:true')
             self.gui.search.do_search()
 
-    def test_run_one_web_main(self, book_id, row):
+    def test_run_one_web_main(self, book_id):  # , row):
         '''
         For the books_id:
         wipe metadata, launch a web-browser to select the desired volumes,
@@ -562,8 +574,6 @@ class InterfacePlugin(InterfaceAction):
         if not self.test_for_column():
             return
 
-        db = self.gui.current_db.new_api
-
       # display "Book details"
         if DEBUG: prints("should display book details")
         # self.gui.library_view.model().refresh_ids([book_id], current_row=row)
@@ -572,6 +582,7 @@ class InterfacePlugin(InterfaceAction):
         self.gui.library_view.select_rows((book_id,))
         # self.gui.iactions['Show Book Details'].show_book_info()
 
+        db = self.gui.current_db.new_api
         mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
         isbn, auteurs, titre="","",""
 

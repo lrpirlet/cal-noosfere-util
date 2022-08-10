@@ -13,7 +13,7 @@ from calibre.gui2.actions import InterfaceAction, menu_action_unique_name
 from calibre.utils.date import UNDEFINED_DATE
 from calibre_plugins.noosfere_util.config import prefs
 
-from qt.core import (QMenu, QMessageBox, QToolButton, QUrl)
+from qt.core import (QMenu, QMessageBox, QToolButton, QUrl, QEventLoop, QTimer)
 
 # from PyQt5.QtWidgets import QToolButton, QMenu, QMessageBox
 # from PyQt5.QtCore import QUrl
@@ -511,32 +511,31 @@ class InterfacePlugin(InterfaceAction):
             return error_dialog(self.gui, 'Pas de métadonnées affectées',
                              'Aucun livre sélectionné', show=True)
 
+    #   # Map the rows to book ids
+        ids = list(map(self.gui.library_view.model().id, rows))     # book_id = self.gui.library_view.model().id(row)
+        if DEBUG : prints("ids : ", ids)                            # ça c'est bon: list of id in selected order
 
-        book_rows = [map(self.gui.library_view.currentIndex().row(),rows)]
-        if DEBUG : prints("rows : ", book_rows)
-        if DEBUG : prints("current_index : ", self.gui.library_view.currentIndex())
-        if DEBUG : prints("current_row : ", self.gui.library_view.currentIndex().row()) # current_row=self.gui.library_view.currentIndex().row())
-
-        row_s = [r.row() for r in self.gui.library_view.selectionModel().selectedRows()] # ca c'est bon row in selected order
+        row_s = [r.row() for r in self.gui.library_view.selectionModel().selectedRows()] # ca c'est bon list of row in selected order
         if DEBUG : prints("row_s : ", row_s)
 
-    #   # Map the rows to book ids
-        ids = list(map(self.gui.library_view.model().id, rows))                          # ça c'est bon id in selected order
-        if DEBUG : prints("ids : ", ids)
-          # book_id = self.gui.library_view.model().id(row)
+        # book_rows = [map(self.gui.library_view.currentIndex().row(),rows)]
+        # if DEBUG : prints("rows : ", book_rows)       # list of PyQt6.QtCore.QModelIndex object
+        # if DEBUG : prints("current_index : ", self.gui.library_view.currentIndex())  # current PyQt6.QtCore.QModelIndex object
+        # if DEBUG : prints("current_row : ", self.gui.library_view.currentIndex().row()) # current_row=self.gui.library_view.currentIndex().row())
+
       # do the job for one book
       # nsfr_id_recu is true if metadata was updated, false if web_returned no nsfr_id
         nbr_ok = 0
         set_ok = set()
-        for book_row in rows:
-            if DEBUG : prints("book_row : ", book_row)
-            if DEBUG : prints("type(book_row) : ", type(book_row))
-            answer = self.test_run_one_web_main(book_row)
+        for book_id in ids:
+            if DEBUG : prints("book_id : ", book_id)
+            if DEBUG : prints("row     : ", row_s[ids.index(book_id)])
+            answer = self.test_run_one_web_main(book_id, row_s[ids.index(book_id)])
             nsfr_id_recu, more = answer[0], answer[1]
       # mark books that have NOT been bypassed... so we can fetch metadata on selected
             if nsfr_id_recu:
                 nbr_ok += 1
-                set_ok.add(self.gui.library_view.model().id(book_row))
+                set_ok.add(self.gui.library_view.model().id(book_id))
                 prints("set_ok", set_ok)
             if not more: break
 
@@ -551,23 +550,27 @@ class InterfacePlugin(InterfaceAction):
             self.gui.search.setEditText('marked:true')
             self.gui.search.do_search()
 
-    def test_run_one_web_main(self, book_row):
+    def test_run_one_web_main(self, book_id, row):
         '''
         For the books_id:
         wipe metadata, launch a web-browser to select the desired volumes,
         set the nsfr_id, remove the ISBN (?fire a metadata download?)
         '''
         if DEBUG: prints("in test_run_one_web_main")
-        book_id = self.gui.library_view.model().id(book_row)
-        db = self.gui.current_db.new_api
-      # display "Book details"
-        if DEBUG: prints("should display book details")
-        self.gui.library_view.model().refresh_ids([book_id], current_row=book_row)
-        #self.gui.iactions['Show Book Details'].show_book_info()
 
       # check for presence of needed column
         if not self.test_for_column():
             return
+
+        db = self.gui.current_db.new_api
+
+      # display "Book details"
+        if DEBUG: prints("should display book details")
+        # self.gui.library_view.model().refresh_ids([book_id], current_row=row)
+        # self.gui.library_view.setCurrentIndex(book_id)
+          # gives: TypeError: QAbstractItemView.setCurrentIndex(): argument 1 has unexpected type 'int'
+        self.gui.library_view.select_rows((book_id,))
+        # self.gui.iactions['Show Book Details'].show_book_info()
 
         mi = db.get_metadata(book_id, get_cover=False, cover_as_data=False)
         isbn, auteurs, titre="","",""
@@ -599,14 +602,25 @@ class InterfacePlugin(InterfaceAction):
         # WARNING: "webengine-dialog" is a defined function in calibre\src\calibre\utils\ipc\worker.py ...DO NOT CHANGE...
 
         # sleep some like 5 seconds to wait for web_main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
+      # equivalent to sleep(5)
+        # loop = QEventLoop()
+        # QTimer.singleShot(5000, loop.quit)
+        # loop.exec_()
+        while not glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*")):
+            loop = QEventLoop()
+            QTimer.singleShot(200, loop.quit)
+            loop.exec_()
+
         # make sure that main loop is NOT responding while QWebEngineView is running.
         # That could result in hang... on purpose, I am NOT looking for control-c...
         # that should raise attention AND trigger looking into temp dir for nsfr_utl-web_main.log
-        sleep(5)
-
       # wait till file is removed but loop fast enough for a user to feel the operation instantaneous
         while glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*")):
-            sleep(.2)           # loop fast enough for a user to feel the operation instantaneous
+            loop = QEventLoop()
+            QTimer.singleShot(200, loop.quit)
+            loop.exec_()
+
+            #sleep(.2)           # loop fast enough for a user to feel the operation instantaneous
 
       # sync file is gone, meaning QWebEngineView process is closed so, we can collect the result
         tpf = open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r", encoding="utf_8")

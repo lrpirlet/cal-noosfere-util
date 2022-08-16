@@ -38,7 +38,7 @@ from calibre.gui2 import Application
 
 from json import dumps
 from functools import partial
-import tempfile, os, sys, logging
+import tempfile, glob, os, sys, logging
 
 
 class StreamToLogger():
@@ -146,6 +146,12 @@ class MainWindow(QMainWindow):
         self.set_search_bar()
         self.join_all_boxes()
         self.set_nav_and_status_bar()
+
+      # Create a timer object to periodicaly check for shutdown communication from main calibre
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.chk_for_shutdown)
+        self.timer.start(250)
+
 
       # make all that visible... I want this window on top ready to work with
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
@@ -298,14 +304,14 @@ class MainWindow(QMainWindow):
         exit_btn.triggered.connect(self.select_and_exit)
         nav_tb.addAction(exit_btn)
 
-  # set status bar
+      # set status bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-  # Create page loading progress bar that is displayed in the status bar.
+      # Create page loading progress bar that is displayed in the status bar.
         self.msg_label = QLabel()
         self.page_load_label = QLabel()
         self.page_load_pb = QProgressBar()
-  # Set up widgets on the statusbar
+      # Set up widgets on the statusbar
         self.statusBar().addPermanentWidget(self.msg_label, stretch=36)
         self.statusBar().addPermanentWidget(self.page_load_label, stretch=14)
         self.statusBar().addPermanentWidget(self.page_load_pb, stretch=50)
@@ -378,9 +384,8 @@ class MainWindow(QMainWindow):
 
     def report_returned_id(self, returned_id):
         print("in report_returned_id returned_id : {}".format(returned_id))
-        report_tpf=open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"),"w",encoding="utf_8")
-        report_tpf.write(returned_id)
-        report_tpf.close
+        with open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"),"w",encoding="utf_8") as report_tpf:
+            report_tpf.write(returned_id)
 
     def set_progress_bar(self):
         print("in set_progress_bar")
@@ -411,18 +416,18 @@ class MainWindow(QMainWindow):
         else:
             print('No book selected, no change will take place: unset')
             self.report_returned_id("unset")
-        Application.instance().exit()     # exit application...
+        Application.instance().exit()               # exit application...
 
-    def abort_book(self):                         # we want to NOT change the book and proceed to the next one
+    def abort_book(self):                           # we want to NOT change the book and proceed to the next one
         print("in abort_book")
         reply = QMessageBox.question(self, 'Certain', "Oublier ce livre et passer au suivant", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
             print("WebEngineView was aborted: aborted")
             self.report_returned_id("aborted")
-            Application.instance().exit()     # exit application...
+            Application.instance().exit()           # exit application...
 
 
-    def closeEvent(self, event):                  # abort hit window exit "X" button we stop processing this and all following books
+    def closeEvent(self, event):                    # abort hit window exit "X" button we stop processing this and all following books
         print("in closeEvent event : {}".format(event))
         reply = QMessageBox.question(self, 'Vraiment', "Quitter et ne plus rien changer", QMessageBox.No | QMessageBox.Yes, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
@@ -432,6 +437,13 @@ class MainWindow(QMainWindow):
             super().closeEvent(event)
         else:
             event.ignore()
+
+    def chk_for_shutdown(self):                     # presence of such file means that calibre shutdown
+        if glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_terminate-cal-qweb*")):
+            print("WebEngineView was closed: shutdown")
+            self.report_returned_id("shutdown")     # report main calibre shutdown
+            Application.instance().exit()           # exit application...
+
 
 
 def main(data):
@@ -467,9 +479,8 @@ if __name__ == '__main__':
     data = [url, isbn, auteurs, titre]
     main(data)
 
-    tf = open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r",encoding='utf_8')
-    returned_id = tf.read()
-    tf.close()
+    with open (os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r",encoding='utf_8') as tf:
+        returned_id = tf.read()
 
   # from here should modify the metadata, or not.
     if returned_id.replace("vl$","").replace("-","").isnumeric():

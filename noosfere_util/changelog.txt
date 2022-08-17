@@ -41,4 +41,35 @@ Added some code to fill the noosfere form (was a lot easier than expected)
 Implemented a logging class and redirected output to a log file for the detached
 process web_main.py, now I can see what is wrong and correct it.
 
-version(0.0.5) is submitted for testing
+version(0.5.0) is submitted for testing
+
+I wanted to make current the book actually processed by noosfere_util.
+
+BUT in that case the main calibre program is reachable and CAN BE KILLED (by pressing the X
+of the window).
+SO, it is possible to kill (main) calibre while the (noosfere_util) web_browser detached process
+is still running. If a book is selected, then the probability to hang the  (main) calibre is very
+high, preventing restarting calibre.
+
+A process named "The main calibre program" is still running...
+The workaround is to kill this process or to reboot...
+
+To avoid this situation, A signal named "shutdown_started" was implemented by kovidgoyal see:
+https://github.com/kovidgoyal/calibre/commit/171dda538a35e1968c7cdcf6fa9ec4226bc55912
+Now, at least 2 seconds are available to terminate the (noosfere_util) web_browser detached process cleanly.
+
+WARNING THIS IMPLIES USING calibre version 6.3.0 at a minimum (it is NOT possible to use it safely
+with a previous version of calibre...
+
+In noosfere_util, the handle_shutdown(), triggered by the signal, do create a temp file that tells
+the web_browser detached process, to terminate, simulating the user aborting...
+At the same time, the handle_shutdown() will simulate the answer from the web_browser detached
+process to speed-up the reaction...
+
+Some temporary files will be left behind that will be killed at next invocation of noosfere_util.
+
+I have tested various scenarii without problem, I still need to implement some improvements in particular
+when a lot of books are selected for "efface les metadonnées en surplus" et pour "Distribue l'information éditeur"
+
+this is quite a change toward what I like to achieve. I will push the version to (0.6.0) and submit it for testing.
+

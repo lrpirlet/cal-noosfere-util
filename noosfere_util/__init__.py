@@ -25,8 +25,8 @@ class noosfereutil(InterfaceActionBase):
                         #"Redistribue les informations liées aux editeurs")
     supported_platforms = ['windows', 'osx', 'linux']
     author              = 'Louis Richard Pirlet'
-    version             = (0, 5, 0)
-    minimum_calibre_version = (5, 35, 0)
+    version             = (0, 6, 0)
+    minimum_calibre_version = (6, 3, 0)
 
     #: This field defines the GUI plugin class that contains all the code
     #: that actually does something. Its format is module_path:class_name

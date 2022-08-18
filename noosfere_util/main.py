@@ -262,16 +262,20 @@ class InterfacePlugin(InterfaceAction):
           # Launch a separate process to view the URL in WebEngine
             self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.noosfere_util.web_main', 'data':data})
             if DEBUG: prints("webengine-dialog process submitted")          # WARNING: "webengine-dialog" is a defined function in calibre\src\calibre\utils\ipc\worker.py ...DO NOT CHANGE...
-          # wait for web_main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
-            while not glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*")):
-                loop = QEventLoop()
-                QTimer.singleShot(200, loop.quit)
-                loop.exec_()
-          # wait till file is removed but loop fast enough for a user to feel the operation instantaneous...
-            while glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*")):
-                loop = QEventLoop()
-                QTimer.singleShot(200, loop.quit)
-                loop.exec_()
+      # wait for web_main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
+      # watch out, self.do_shutdown is set by a signal, any time...
+        while not (self.do_shutdown or glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*"))):
+            loop = QEventLoop()
+            QTimer.singleShot(200, loop.quit)
+            loop.exec_()
+      # wait till file is removed but loop fast enough for a user to feel the operation instantaneous...
+      # watch out, self.do_shutdown is set by a signal, any time...
+        while (not self.do_shutdown) and (glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*"))):
+            loop = QEventLoop()
+            QTimer.singleShot(200, loop.quit)
+            loop.exec_()
+      # unless shutdown_started signal asserted
+        if not self.do_shutdown:
           # sync file is gone, meaning QWebEngineView process is closed so, we can collect the result, bypass if shutdown_started
             with open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r", encoding="utf_8") as tpf:
                 returned_id = tpf.read()

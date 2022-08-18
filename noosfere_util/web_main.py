@@ -440,8 +440,8 @@ class MainWindow(QMainWindow):
 
     def chk_for_shutdown(self):                     # presence of such file means that calibre shutdown
         if glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_terminate-cal-qweb*")):
-            print("WebEngineView was closed: shutdown")
-            self.report_returned_id("shutdown")     # report main calibre shutdown
+            print("WebEngineView was closed: killed")
+            self.report_returned_id("killed")       # report main calibre shutdown
             Application.instance().exit()           # exit application...
 
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # vim:fileencoding=UTF-8:ts=4:sw=4:sta:et:sts=4:ai
 
+# https://www.babelio.com/
+
 __license__   = 'GPL v3'
 __copyright__ = '2021, Louis Richard Pirlet'
 
@@ -11,7 +13,7 @@ from calibre.constants import DEBUG
 from calibre.gui2 import open_url, error_dialog, info_dialog
 from calibre.gui2.actions import InterfaceAction, menu_action_unique_name
 from calibre.utils.date import UNDEFINED_DATE
-from calibre_plugins.noosfere_util.config import prefs
+from calibre_plugins.babelio_util.config import prefs
 
 from qt.core import (QMenu, QMessageBox, QToolButton, QUrl, QEventLoop, QTimer)
 
@@ -76,10 +78,10 @@ def create_menu_action_unique(ia, parent_menu, menu_text, image=None, tooltip=No
 
 class InterfacePlugin(InterfaceAction):
 
-    name = 'noosfere util'
+    name = 'babelio util'
 
-    action_spec = ("noosfere util", None,
-            "lance les utilités pour noosfere DB", None)
+    action_spec = ("babelio util", None,
+            "lance les utilités pour babelio DB", None)
     popup_type = QToolButton.InstantPopup
     action_add_menu = True
     action_type = 'current'
@@ -88,21 +90,21 @@ class InterfacePlugin(InterfaceAction):
     do_shutdown = False                 # assume main calibre does NOT shutdown
 
   # remove previous log files for web_main process in the temp dir
-    with contextlib.suppress(FileNotFoundError): os.remove(os.path.join(tempfile.gettempdir(), 'nsfr_utl-web_main.log'))
+    with contextlib.suppress(FileNotFoundError): os.remove(os.path.join(tempfile.gettempdir(), 'babelio_utl-web_main.log'))
   # remove help file that may have been updated anyway
-    with contextlib.suppress(FileNotFoundError): os.remove(os.path.join(tempfile.gettempdir(), "nfsr_utl_doc.html"))
+    with contextlib.suppress(FileNotFoundError): os.remove(os.path.join(tempfile.gettempdir(), "babelio_utl_doc.html"))
   # remove all trace of an old synchronization file between calibre and the outside process running QWebEngineView
-    for i in glob.glob( os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*")):
+    for i in glob.glob( os.path.join(tempfile.gettempdir(),"babelio_utl_sync-cal-qweb*")):
             with contextlib.suppress(FileNotFoundError): os.remove(i)
   # remove all trace of a main calibre shutdown file to warn the outside process running QWebEngineView
-    for i in glob.glob( os.path.join(tempfile.gettempdir(),"nsfr_utl_terminate-cal-qweb*")):
+    for i in glob.glob( os.path.join(tempfile.gettempdir(),"babelio_utl_terminate-cal-qweb*")):
             with contextlib.suppress(FileNotFoundError): os.remove(i)
 
     def genesis(self):
       # get_icons and get_resources are partially defined function (zip location is defined)
       # those are known when genesis is called by calibre
         icon = get_icons('blue_icon/top_icon.png')
-      # qaction is created and made available by calibre for noosfere_util
+      # qaction is created and made available by calibre for babelio_util
         self.qaction.setIcon(icon)
       # load the prefs so that they are available
         self.collection_name = prefs["COLLECTION_NAME"]
@@ -150,33 +152,33 @@ class InterfacePlugin(InterfaceAction):
 
     def handle_shutdown(self):
         '''
-        It is possible to kill (main) calibre while the (noosfere_util) web_browser detached process
+        It is possible to kill (main) calibre while the (babelio_util) web_browser detached process
         is still running. If a book is selected, then probability to hang (main) calibre is very high,
         preventing restarting calibre. A process named "The main calibre program" is still running...
         The workaroundis to kill this process or to reboot...
 
         To avoid this situation, A signal named "shutdown_started" was implemented so that something
-        like 2 seconds are available to the (noosfere_util) web_browser detached process cleanly.
+        like 2 seconds are available to the (babelio_util) web_browser detached process cleanly.
 
         The handle_shutdown(), triggered by the signal, do create a temp file that tells
         the web_browser detached process, to terminate, simulating the user aborting...
         At the same time, the handle_shutdown() will simulate the answer from the web_browser detached
         process to speed-up the reaction...
 
-        Some temporary files will be left behind that will be killed at next invocation of noosfere_util.
+        Some temporary files will be left behind that will be killed at next invocation of babelio_util.
         '''
         if DEBUG : prints("in handle_shutdown()")
         self.do_shutdown = True
         if DEBUG : prints("self.do_shutdown = True")
-        terminate_tpf=tempfile.NamedTemporaryFile(prefix="nsfr_utl_terminate-cal-qweb", delete=False)
+        terminate_tpf=tempfile.NamedTemporaryFile(prefix="babelio_utl_terminate-cal-qweb", delete=False)
         terminate_tpf.close
-        if DEBUG : prints("tmp file nsfr_utl_terminate-cal-qweb created")
+        if DEBUG : prints("tmp file babelio_utl_terminate-cal-qweb created")
 
     def run_web_main(self):
         '''
         For the selected books:
         wipe metadata, launch a web-browser to select the desired volumes,
-        set the nsfr_id, remove the ISBN (?fire a metadata download?)
+        set the babelio_id, remove the ISBN (?fire a metadata download?)
         '''
         if DEBUG: prints("in run_web_main")
 
@@ -191,28 +193,28 @@ class InterfacePlugin(InterfaceAction):
         if DEBUG : prints("ids : ", ids)
 
       # do the job for one book
-      # nsfr_id_recu is true if metadata was updated, false if web_returned no nsfr_id
+      # babelio_id_recu is true if metadata was updated, false if web_returned no babelio_id
         nbr_ok = 0
         set_ok = set()
         for book_id in ids:
           # if main calibre does shutdown, stop processing any more book_id
             if not self.do_shutdown:
                 answer = self.run_one_web_main(book_id)
-                nsfr_id_recu, more = answer[0], answer[1]
+                babelio_id_recu, more = answer[0], answer[1]
             else:
-                more = False        # if NOT more, nsfr_id_recu is False
+                more = False        # if NOT more, babelio_id_recu is False
             if not more:
                 break
           # mark books that have NOT been bypassed... so we can fetch metadata on selected
-            if nsfr_id_recu:
+            if babelio_id_recu:
                 nbr_ok += 1
                 set_ok.add(book_id)
                 prints("set_ok", set_ok)
 
       # tell user about what has been done...sorry, NOT if main calibre is closed...
         if not self.do_shutdown:
-            if DEBUG: prints('nfsr_id is recorded, metadata is prepared for {} book(s) out of {}'.format(nbr_ok, len(ids)))
-            info_dialog(self.gui, 'nsfr_id: enregistré',
+            if DEBUG: prints('babelio_id is recorded, metadata is prepared for {} book(s) out of {}'.format(nbr_ok, len(ids)))
+            info_dialog(self.gui, 'babelio_id: enregistré',
                 'Les métadonnées ont été préparées pour {} livre(s) sur {}'.format(nbr_ok, len(ids)),
                 show=True)
           # new_api does not know anything about marked books, so we use the full db object
@@ -225,7 +227,7 @@ class InterfacePlugin(InterfaceAction):
         '''
         For the books_id:
         wipe metadata, launch a web-browser to select the desired volumes,
-        set the nsfr_id, remove the ISBN (?fire a metadata download?)
+        set the babelio_id, remove the ISBN (?fire a metadata download?)
         '''
         if DEBUG: prints("in run_one_web_main")
 
@@ -246,7 +248,7 @@ class InterfacePlugin(InterfaceAction):
         if DEBUG and "isbn" in mi.get_identifiers(): prints("isbn             : ", mi.get_identifiers()["isbn"])
 
       # set url, isbn, auteurs and titre
-        url = "https://www.noosfere.org/livres/noosearch.asp"     # jump directly to noosfere advanced search page
+        url = "https://www.babelio.com/recherche"     # jump directly to babelio advanced search page
         if "isbn" in mi.get_identifiers(): isbn = mi.get_identifiers()["isbn"]
         auteurs = " & ".join(mi.authors)
         titre = mi.title
@@ -260,32 +262,32 @@ class InterfacePlugin(InterfaceAction):
       # unless shutdown_started signal asserted
         if not self.do_shutdown:
           # Launch a separate process to view the URL in WebEngine
-            self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.noosfere_util.web_main', 'data':data})
+            self.gui.job_manager.launch_gui_app('webengine-dialog', kwargs={'module':'calibre_plugins.babelio_util.web_main', 'data':data})
             if DEBUG: prints("webengine-dialog process submitted")          # WARNING: "webengine-dialog" is a defined function in calibre\src\calibre\utils\ipc\worker.py ...DO NOT CHANGE...
       # wait for web_main.py to settle and create a temp file to synchronize QWebEngineView with calibre...
       # watch out, self.do_shutdown is set by a signal, any time...
-        while not (self.do_shutdown or glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*"))):
+        while not (self.do_shutdown or glob.glob(os.path.join(tempfile.gettempdir(),"babelio_utl_sync-cal-qweb*"))):
             loop = QEventLoop()
             QTimer.singleShot(200, loop.quit)
             loop.exec_()
       # wait till file is removed but loop fast enough for a user to feel the operation instantaneous...
       # watch out, self.do_shutdown is set by a signal, any time...
-        while (not self.do_shutdown) and (glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_sync-cal-qweb*"))):
+        while (not self.do_shutdown) and (glob.glob(os.path.join(tempfile.gettempdir(),"babelio_utl_sync-cal-qweb*"))):
             loop = QEventLoop()
             QTimer.singleShot(200, loop.quit)
             loop.exec_()
       # unless shutdown_started signal asserted
         if not self.do_shutdown:
           # sync file is gone, meaning QWebEngineView process is closed so, we can collect the result, bypass if shutdown_started
-            with open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r", encoding="utf_8") as tpf:
+            with open(os.path.join(tempfile.gettempdir(),"babelio_utl_report_returned_id"), "r", encoding="utf_8") as tpf:
                 returned_id = tpf.read()
             if DEBUG: prints("returned_id", returned_id)
 
         if self.do_shutdown:
             return(False,False)                             # shutdown_started, do not try to change db
         elif returned_id.replace("vl$","").replace("-","").isnumeric():
-            nsfr_id = returned_id
-          # set the nsfr_id, reset most metadata...
+            babelio_id = returned_id
+          # set the babelio_id, reset most metadata...
             for key in mi.custom_field_keys():
                 display_name, val, oldval, fm = mi.format_field_extended(key)
                 if self.coll_srl_name == key : cstm_coll_srl_fm=fm
@@ -294,7 +296,7 @@ class InterfacePlugin(InterfaceAction):
             mi.series=""
             mi.language=""
             mi.pubdate=UNDEFINED_DATE
-            mi.set_identifier('nsfr_id', nsfr_id)
+            mi.set_identifier('babelio_id', babelio_id)
             mi.set_identifier('isbn', "")
             if cstm_coll_srl_fm:
                 cstm_coll_srl_fm["#value#"] = ""
@@ -304,16 +306,16 @@ class InterfacePlugin(InterfaceAction):
                 mi.set_user_metadata(self.collection_name, cstm_collection_fm)
           # commit the change, force reset of the above fields, leave the others alone
             db.set_metadata(book_id, mi, force_changes=True)
-            return (True, True)                                 # nsfr_id received, more book
+            return (True, True)                                 # babelio_id received, more book
         elif "unset" in returned_id:
             if DEBUG: prints('unset, no change will take place...')
-            return (False, True)                                # nsfr_id NOT received, more book
+            return (False, True)                                # babelio_id NOT received, more book
         elif "aborted" in returned_id:
             if DEBUG: prints('aborted, no change will take place...')
-            return (False, True)                                # nsfr_id NOT received, more book
+            return (False, True)                                # babelio_id NOT received, more book
         elif "killed" in returned_id:
             if DEBUG: prints('killed, no change will take place...')
-            return (False, False)                               # nsfr_id NOT received, NO more book
+            return (False, False)                               # babelio_id NOT received, NO more book
         else:
             if DEBUG: prints("should not ends here... returned_id : ", returned_id)
             return (False, False)                               # STOP everything program error
@@ -323,8 +325,8 @@ class InterfacePlugin(InterfaceAction):
         For all selected book
         Deletes publisher, tags, series, rating, self.coll_srl_name (#coll_srl),
         self.collection_name (#collection), and any ID except ISBN. All other fields are supposed
-        to be overwritten when new metadata is downloaded from noosfere.
-        Later, ISBN will be wiped just before nsfr_id (and maybe ISBN) is written.
+        to be overwritten when new metadata is downloaded from babelio.
+        Later, ISBN will be wiped just before babelio_id (and maybe ISBN) is written.
         '''
         if DEBUG: prints("in wipe_selected_metadata")
 
@@ -362,7 +364,7 @@ class InterfacePlugin(InterfaceAction):
             mi.series=""
             mi.language=""
             mi.pubdate=UNDEFINED_DATE
-            mi.set_identifier('nsfr_id', "")
+            mi.set_identifier('babelio_id', "")
             if cstm_coll_srl_fm:
                 cstm_coll_srl_fm["#value#"] = ""
                 mi.set_user_metadata(self.coll_srl_name, cstm_coll_srl_fm)
@@ -379,7 +381,7 @@ class InterfacePlugin(InterfaceAction):
                 show=True)
 
       # select all and only those that have been cleaned... for a possible futher action
-      # such as metadata download from calibre or choice of the volume from noosfere_util
+      # such as metadata download from calibre or choice of the volume from babelio_util
         self.gui.current_db.set_marked_ids(ids)
         self.gui.search.setEditText('marked:true')
         self.gui.search.do_search()
@@ -436,7 +438,7 @@ class InterfacePlugin(InterfaceAction):
             if DEBUG: prints("Okay, Houston...we've had a problem here (Apollo 13)")
             info_dialog(self.gui, 'Colonne inexistante',
                 "<p> L'une ou l'autre colonne ou même les deux n'existe(nt) pas... Veuillez y remédier.</p>"
-                "<p> On peut utiliser <strong>noosfere_util</strong>, pour <strong>personnaliser l'extension</strong>.</p>",
+                "<p> On peut utiliser <strong>babelio_util</strong>, pour <strong>personnaliser l'extension</strong>.</p>",
                 show=True)
             return False
         return True
@@ -515,7 +517,7 @@ class InterfacePlugin(InterfaceAction):
             mi.publisher=""
             mi.series=""
             mi.language=""
-            mi.set_identifier('nsfr_id', "")
+            mi.set_identifier('babelio_id', "")
 
             if cstm_coll_srl_fm:
                 cstm_coll_srl_fm["#value#"] = ""
@@ -543,16 +545,16 @@ class InterfacePlugin(InterfaceAction):
     def show_help(self):
          # Extract on demand the help file resource to a temp file
         def get_help_file_resource():
-          # keep "nfsr_utl_doc.html" as the last item in the list, this is the help entry point
+          # keep "babelio_utl_doc.html" as the last item in the list, this is the help entry point
           # we need both files for the help
-            file_path = os.path.join(tempfile.gettempdir(), "noosfere_util_web_075.png")
-            file_data = self.load_resources('doc/' + "noosfere_util_web_075.png")['doc/' + "noosfere_util_web_075.png"]
+            file_path = os.path.join(tempfile.gettempdir(), "babelio_util_web_075.png")
+            file_data = self.load_resources('doc/' + "babelio_util_web_075.png")['doc/' + "babelio_util_web_075.png"]
             if DEBUG: prints('show_help picture - file_path:', file_path)
             with open(file_path,'wb') as fpng:
                 fpng.write(file_data)
 
-            file_path = os.path.join(tempfile.gettempdir(), "nfsr_utl_doc.html")
-            file_data = self.load_resources('doc/' + "nfsr_utl_doc.html")['doc/' + "nfsr_utl_doc.html"]
+            file_path = os.path.join(tempfile.gettempdir(), "babelio_utl_doc.html")
+            file_data = self.load_resources('doc/' + "babelio_utl_doc.html")['doc/' + "babelio_utl_doc.html"]
             if DEBUG: prints('show_help - file_path:', file_path)
             with open(file_path,'wb') as fhtm:
                 fhtm.write(file_data)
@@ -566,11 +568,11 @@ class InterfacePlugin(InterfaceAction):
         text += ("\nLe nom de la collection par l'éditeur est : {},"
                 "\nLe numéro d'ordre dans la collection par l'éditeur "
                 "est : {}".format(self.collection_name,self.coll_srl_name)).encode('utf-8')
-        QMessageBox.about(self.gui, 'About the noosfere_util',
+        QMessageBox.about(self.gui, 'About the babelio_util',
                 text.decode('utf-8'))
 
     def apply_settings(self):
-        from calibre_plugins.noosfere_util.config import prefs
+        from calibre_plugins.babelio_util.config import prefs
         # In an actual non trivial plugin, you would probably need to
         # do something based on the settings in prefs
         if DEBUG: prints("in apply_settings")

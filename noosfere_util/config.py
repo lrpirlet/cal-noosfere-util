@@ -17,7 +17,7 @@ from calibre.gui2.ui import get_gui
 from calibre.gui2.preferences.create_custom_column import CreateNewCustomColumn
 from calibre.utils.config import JSONConfig
 
-prefs = JSONConfig('plugins/noosfere_util')
+prefs = JSONConfig('plugins/babelio_util')
 
 # Set defaults
 prefs.defaults["COLLECTION_NAME"] = "#collection"

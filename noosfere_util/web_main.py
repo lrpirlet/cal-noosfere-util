@@ -115,7 +115,7 @@ class MainWindow(QMainWindow):
     """
     this process, running in the calibre environment, is detached from calibre program
     It does receive data from noofere_util, processes it, then communicates back the result and dies.
-    In fact this is a WEB browser centered on www.noosfere.org to get the nsfr_id of a choosen volume.
+    In fact this is a WEB browser centered on www.babelio.com to get the babelio_id of a choosen volume.
 
     """
 
@@ -127,7 +127,7 @@ class MainWindow(QMainWindow):
         logging.basicConfig(
         level = logging.DEBUG,
         format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s',
-        filename = os.path.join(tempfile.gettempdir(), 'nsfr_utl-web_main.log'),
+        filename = os.path.join(tempfile.gettempdir(), 'babelio_utl-web_main.log'),
         filemode = 'a')
         stdout_logger = logging.getLogger('STDOUT')
         sl = StreamToLogger(stdout_logger, logging.INFO)
@@ -179,7 +179,7 @@ class MainWindow(QMainWindow):
     def set_isbn_box(self):        # info boxes isbn
         print("in set_isbn_box")
         self.isbn_btn = QPushButton(" ISBN ", self)
-        self.isbn_btn.setToolTip('Action sur la page noosfere initiale: "Mots-clefs à rechercher" = ISBN, coche la case "Livre".')
+        self.isbn_btn.setToolTip('Action sur la page babelio initiale: "Mots-clefs à rechercher" = ISBN, coche la case "Livre".')
                                    # Action on home page: "Mots-clefs à rechercher" = ISBN, set checkbox "Livre".
         self.isbn_dsp = QLineEdit()
         self.isbn_dsp.setReadOnly(True)
@@ -194,7 +194,7 @@ class MainWindow(QMainWindow):
     def set_auteurs_box(self):                  # info boxes auteurs
         print("in set_auteurs_box")
         self.auteurs_btn = QPushButton("Auteur(s)", self)
-        self.auteurs_btn.setToolTip('Action sur la page noosfere initiale: "Mots-clefs à rechercher" = Auteur(s), coche la case "Auteurs".')
+        self.auteurs_btn.setToolTip('Action sur la page babelio initiale: "Mots-clefs à rechercher" = Auteur(s), coche la case "Auteurs".')
                                       # Action on home page: "Mots-clefs à rechercher" = Auteur(s), set checkbox "Auteurs".
         self.auteurs_dsp = QLineEdit()
         self.auteurs_dsp.setReadOnly(True)
@@ -208,7 +208,7 @@ class MainWindow(QMainWindow):
     def set_titre_box(self):                    # info boxes titre
         print("in set_titre_box")
         self.titre_btn = QPushButton("Titre", self)
-        self.titre_btn.setToolTip('Action sur la page noosfere initiale: "Mots-clefs à rechercher" = Titre, coche la case "Livres".')
+        self.titre_btn.setToolTip('Action sur la page babelio initiale: "Mots-clefs à rechercher" = Titre, coche la case "Livres".')
                                     # Action on home page: "Mots-clefs à rechercher" = Titre, set checkbox "Livres".
         self.titre_dsp = QLineEdit()
         self.titre_dsp.setReadOnly(True)
@@ -267,7 +267,7 @@ class MainWindow(QMainWindow):
         nav_tb.addAction(reload_btn)
 
         home_btn = QAction(get_icons('blue_icon/home.png'), "Home", self)
-        home_btn.setToolTip("On va à la recherche avancée de noosfere")           # We go to the front page of noosfere
+        home_btn.setToolTip("On va à la page recherche avancée de babelio")           # We go to the search page of babelio
         home_btn.triggered.connect(self.navigate_home)
         nav_tb.addAction(home_btn)
 
@@ -286,8 +286,8 @@ class MainWindow(QMainWindow):
 
         self.urlbox = QLineEdit()
         self.urlbox.returnPressed.connect(self.navigate_to_url)
-        self.urlbox.setToolTip("On peut même introduire une adresse, hors noosfere, mais A TES RISQUES ET PERILS... noosfere est sûr (https://), la toile par contre...")
-                                # You can even enter an address, outside of noosfere, but AT YOUR OWN RISK... noosfere is safe: (https://), the web on the other side...
+        self.urlbox.setToolTip("On peut même introduire une adresse, hors babelio, mais A TES RISQUES ET PERILS... babelio est sûr (https://), la toile par contre...")
+                                # You can even enter an address, outside of babelio, but AT YOUR OWN RISK... babelio is safe: (https://), the web on the other side...
         nav_tb.addWidget(self.urlbox)
 
         abort_btn = QAction(get_icons('blue_icon/abort.png'), "Abort", self)
@@ -299,8 +299,8 @@ class MainWindow(QMainWindow):
         nav_tb.addSeparator()
 
         exit_btn = QAction(get_icons('blue_icon/exit.png'), "Select and exit", self)
-        exit_btn.setToolTip("On sélectionne cet URL pour extraction de nsfr_id... au suivant")
-                             # select this URL for extraction of nsfr_id, continue
+        exit_btn.setToolTip("On sélectionne cet URL pour extraction de babelio_id... au suivant")
+                             # select this URL for extraction of babelio_id, continue
         exit_btn.triggered.connect(self.select_and_exit)
         nav_tb.addAction(exit_btn)
 
@@ -331,7 +331,7 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def set_noosearch_page(self, iam):
         print("in set_noosearch_page iam : {}".format(iam))
-        if self.urlbox.text() == "https://www.noosfere.org/livres/noosearch.asp":
+        if self.urlbox.text() == "https://www.babelio.com/recherche" :
             if iam == "isbn": val = self.isbn
             elif iam == "auteurs": val = self.auteurs
             else: val = self.titre
@@ -357,7 +357,7 @@ class MainWindow(QMainWindow):
 
     def navigate_home(self):
         print("in navigate_home")
-        self.browser.setUrl(QUrl("https://www.noosfere.org/livres/noosearch.asp"))
+        self.browser.setUrl(QUrl("https://www.babelio.com/recherche"))
 
     def navigate_to_url(self):                    # Does not receive the Url, activated when url bar is manually changed
         print("in navigate_to_url")
@@ -384,7 +384,7 @@ class MainWindow(QMainWindow):
 
     def report_returned_id(self, returned_id):
         print("in report_returned_id returned_id : {}".format(returned_id))
-        with open(os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"),"w",encoding="utf_8") as report_tpf:
+        with open(os.path.join(tempfile.gettempdir(),"babelio_utl_report_returned_id"),"w",encoding="utf_8") as report_tpf:
             report_tpf.write(returned_id)
 
     def set_progress_bar(self):
@@ -405,14 +405,14 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(1000, wait_a_minut)
 
     def select_and_exit(self):                    # sent response over report_returned_id file in temp dir
-      # create a temp file with name starting with nsfr_id
+      # create a temp file with name starting with babelio_id
         print("in select_and_exit")
         choosen_url = self.urlbox.text()
         if "numlivre=" in choosen_url:
             print('choosen_url : {}'.format(choosen_url))
-            nsfr_id = "vl$"+choosen_url.split("numlivre=")[1]
-            print("nsfr_id : {}".format(nsfr_id))
-            self.report_returned_id(nsfr_id)
+            babelio_id = "vl$"+choosen_url.split("numlivre=")[1]
+            print("babelio_id : {}".format(babelio_id))
+            self.report_returned_id(babelio_id)
         else:
             print('No book selected, no change will take place: unset')
             self.report_returned_id("unset")
@@ -439,7 +439,7 @@ class MainWindow(QMainWindow):
             event.ignore()
 
     def chk_for_shutdown(self):                     # presence of such file means that calibre shutdown
-        if glob.glob(os.path.join(tempfile.gettempdir(),"nsfr_utl_terminate-cal-qweb*")):
+        if glob.glob(os.path.join(tempfile.gettempdir(),"babelio_utl_terminate-cal-qweb*")):
             print("WebEngineView was closed: killed")
             self.report_returned_id("killed")       # report main calibre shutdown
             Application.instance().exit()           # exit application...
@@ -449,7 +449,7 @@ class MainWindow(QMainWindow):
 def main(data):
 
     # create a temp file... while it exists launcher program will wait... this file will disappear with the process
-    sync_tpf=tempfile.NamedTemporaryFile(prefix="nsfr_utl_sync-cal-qweb")
+    sync_tpf=tempfile.NamedTemporaryFile(prefix="babelio_utl_sync-cal-qweb")
 
     # retrieve component from data
     #        data = [url, isbn, auteurs, titre]
@@ -457,7 +457,7 @@ def main(data):
     # Start QWebEngineView and associated widgets
     app = Application([])
     window = MainWindow(data)
-    window.initial_url(url)     # supposed to be noosfere advanced search page, fixed by launcher program
+    window.initial_url(url)     # supposed to be babelio advanced search page, fixed by launcher program
     app.exec()
 
     # signal launcher program that we are finished
@@ -472,20 +472,20 @@ if __name__ == '__main__':
     AND to get errors on screen, comment out class StreamToLogger(object)
     along with the 10 first lines in __init__ of class MainWindow(QMainWindow
     '''
-    url = "https://www.noosfere.org/livres/noosearch.asp"   # jump directly to noosfere advanced search page
+    url = "https://www.babelio.com/recherche"    # jump directly to babelio advanced search page
     isbn = "2-277-12362-5"
     auteurs = "Alfred Elton VAN VOGT"                       # forget not that auteurs may be a list of auteurs
     titre = "Le Monde des Ã"
     data = [url, isbn, auteurs, titre]
     main(data)
 
-    with open (os.path.join(tempfile.gettempdir(),"nsfr_utl_report_returned_id"), "r",encoding='utf_8') as tf:
+    with open (os.path.join(tempfile.gettempdir(),"babelio_utl_report_returned_id"), "r",encoding='utf_8') as tf:
         returned_id = tf.read()
 
   # from here should modify the metadata, or not.
     if returned_id.replace("vl$","").replace("-","").isnumeric():
-        nsfr_id = returned_id
-        print("nfsr_id : {}".format(nsfr_id))
+        babelio_id = returned_id
+        print("babelio_id : {}".format(babelio_id))
     elif "unset" in returned_id:
         print('unset, no change will take place...')
     elif "killed" in returned_id:

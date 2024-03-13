@@ -8,7 +8,7 @@ __copyright__ = '2021, Louis Richard Pirlet'
 from calibre.customize import InterfaceActionBase
 
 
-class noosfereutil(InterfaceActionBase):
+class babelioutil(InterfaceActionBase):
     '''
     This class is a simple wrapper that provides information about the actual
     plugin class. The actual interface plugin class is called InterfacePlugin
@@ -18,9 +18,9 @@ class noosfereutil(InterfaceActionBase):
     The reason for having two classes is that it allows the command line
     calibre utilities to run without needing to load the GUI libraries.
     '''
-    name                = "noosfere util"
-    description         = ("Utilités pour noosfere DB, permet de choisir et fixer"
-                        "le nsfr_id avant de lancer la recherche de metadata. "
+    name                = "babelio util"
+    description         = ("Utilités pour babelio DB, permet de choisir et fixer"
+                        "le babelio_id avant de lancer la recherche de metadata. "
                         )#"Annule les champs tels que series remplis par erreur. "
                         #"Redistribue les informations liées aux editeurs")
     supported_platforms = ['windows', 'osx', 'linux']
@@ -31,7 +31,7 @@ class noosfereutil(InterfaceActionBase):
     #: This field defines the GUI plugin class that contains all the code
     #: that actually does something. Its format is module_path:class_name
     #: The specified class must be defined in the specified module.
-    actual_plugin       = 'calibre_plugins.noosfere_util.main:InterfacePlugin'
+    actual_plugin       = 'calibre_plugins.babelio_util.main:InterfacePlugin'
 
     def is_customizable(self):
         '''
@@ -63,7 +63,7 @@ class noosfereutil(InterfaceActionBase):
         # GUI libraries to be loaded, which we do not want when using calibre
         # from the command line
         if self.actual_plugin_:
-            from calibre_plugins.noosfere_util.config import ConfigWidget
+            from calibre_plugins.babelio_util.config import ConfigWidget
             return ConfigWidget(self.actual_plugin_)
 
     def save_settings(self, config_widget):

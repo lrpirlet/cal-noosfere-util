@@ -1,4 +1,4 @@
-The noosfere_util plugin
+The babelio_util plugin
 ========================
 
 Created just to learn Python... I had fun :-).
